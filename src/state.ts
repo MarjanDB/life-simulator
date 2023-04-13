@@ -1,7 +1,9 @@
-import { WorldTerrain, WorldTerrainGeneratorParams } from "./world/worldGenerator";
-import { Food } from "./actors/food";
-import { Hunter, Prey } from "./actors/animal";
+import { WorldTerrain, WorldTerrainGeneratorParams } from "./simulation/world/worldGenerator";
 import { create } from "zustand";
+import { Food } from "./simulation/figures/realActors/food";
+import { Prey } from "./simulation/figures/realActors/prey";
+import { Hunter } from "./simulation/figures/realActors/hunter";
+import { Actor } from "./simulation/figures/actors/actor";
 
 type worldState = WorldTerrainGeneratorParams & {
 	terrain: WorldTerrain;
@@ -12,12 +14,8 @@ type worldState = WorldTerrainGeneratorParams & {
 };
 
 type actorState = {
-	food: Food[];
-	prey: Prey[];
-	hunters: Hunter[];
-	setFood: (food: Food[]) => void;
-	setPrey: (prey: Prey[]) => void;
-	setHunters: (hunters: Hunter[]) => void;
+	actors: Actor[];
+	setActors: (actors: Actor[]) => void;
 };
 
 type simulationState = {
@@ -74,12 +72,8 @@ export const WORLD_STATE = create<worldState>()((set) => ({
 }));
 
 export const ACTOR_STATE = create<actorState>()((set) => ({
-	food: [],
-	prey: [],
-	hunters: [],
-	setFood: (food) => set({ food: food }),
-	setPrey: (prey) => set({ prey: prey }),
-	setHunters: (hunters) => set({ hunters: hunters }),
+	actors: [],
+	setActors: (actors) => set({ actors: actors }),
 }));
 
 export const SIMULATION_STATE = create<simulationState>()((set) => ({

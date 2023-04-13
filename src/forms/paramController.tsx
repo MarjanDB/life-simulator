@@ -1,7 +1,9 @@
 import React, { ChangeEventHandler, ReactElement, useState } from "react";
-import { generateAnimals, Hunter, Prey } from "../actors/animal";
+import { Terrain } from "../simulation/world/worldGenerator";
 import { ACTOR_STATE, INITIAL_HUNTER_PROPERTIES, INITIAL_PREY_PROPERTIES, SIMULATION_STATE, WORLD_STATE } from "../state";
-import { generateTerrain } from "../world/worldGenerator";
+import { Prey } from "../simulation/figures/realActors/prey";
+import { Hunter } from "../simulation/figures/realActors/hunter";
+import { ActorFactory } from "../simulation/figures/actors/actorFactory";
 
 const FormElementForNumber: React.FC<
 	React.HTMLProps<HTMLInputElement> & {
@@ -65,7 +67,7 @@ export const FormController: React.FC = () => {
 	const initialWorldState = WORLD_STATE();
 	const initialSimulationState = SIMULATION_STATE();
 	const [terrain, setTerrain] = WORLD_STATE((v) => [v.terrain, v.setTerrain]);
-	const actorSetters = ACTOR_STATE((v) => ({ setHunters: v.setHunters, setPrey: v.setPrey }));
+	const setActors = ACTOR_STATE((v) => v.setActors);
 
 	const [temporaryHunterParams, setTemporaryHunterParams] = useState({
 		detectionRadius: initialHunterParams.detectionRadius,
@@ -130,26 +132,30 @@ export const FormController: React.FC = () => {
 
 		let element: ReactElement = null!;
 
-		if (typeof currentValue === "number") {
-			element = (
-				<FormElementForNumber
-					className="basis-1/4 min-w-0 bg-slate-100 border-2 border-black"
-					key={index}
-					defaultValue={currentValue}
-					valueCallback={updateState}
-					propertyName={key}
-				></FormElementForNumber>
-			);
-		} else {
-			element = (
-				<FormElementForString
-					className="basis-1/4 min-w-0 bg-slate-100 border-2 border-black"
-					key={index}
-					defaultValue={currentValue}
-					valueCallback={updateState}
-					propertyName={key}
-				></FormElementForString>
-			);
+		switch (typeof currentValue) {
+			case "number":
+				element = (
+					<FormElementForNumber
+						className="basis-1/4 min-w-0 bg-slate-100 border-2 border-black"
+						key={index}
+						defaultValue={currentValue}
+						valueCallback={updateState}
+						propertyName={key}
+					></FormElementForNumber>
+				);
+				break;
+
+			case "string":
+				element = (
+					<FormElementForString
+						className="basis-1/4 min-w-0 bg-slate-100 border-2 border-black"
+						key={index}
+						defaultValue={currentValue}
+						valueCallback={updateState}
+						propertyName={key}
+					></FormElementForString>
+				);
+				break;
 		}
 
 		return element;
@@ -166,32 +172,36 @@ export const FormController: React.FC = () => {
 		if (!initialSimulationState.running) {
 			persistStateToGlobal();
 			if (terrain.length === 0) {
-				const generatedTerrain = generateTerrain({
+				const generatedTerrain = Terrain.generateTerrain({
 					seed: temporaryWorldState.seed,
 					size: temporaryWorldState.size,
 					resolution: temporaryWorldState.resolution,
 				});
 				setTerrain(generatedTerrain);
 
-				actorSetters.setPrey(
-					Prey.generateAnimals<Prey>(
+				const prey = ActorFactory.generateMultiple(temporaryPreyParams.instances, () => {
+					return ActorFactory.getPrey(
+						Terrain.getRandomPosition(generatedTerrain),
 						temporaryPreyParams.detectionRadius,
+						Math.random() < 0.5 ? "FEMALE" : "MALE",
 						temporaryPreyParams.speed,
-						temporaryPreyParams.size,
-						generatedTerrain,
-						temporaryPreyParams.instances
-					)
-				);
+						temporaryPreyParams.size
+					);
+				});
 
-				actorSetters.setHunters(
-					Hunter.generateAnimals<Hunter>(
+				const hunters = ActorFactory.generateMultiple(temporaryHunterParams.instances, () => {
+					return ActorFactory.getHunter(
+						Terrain.getRandomPosition(generatedTerrain),
 						temporaryHunterParams.detectionRadius,
+						Math.random() < 0.5 ? "FEMALE" : "MALE",
 						temporaryHunterParams.speed,
-						temporaryHunterParams.size,
-						generatedTerrain,
-						temporaryHunterParams.instances
-					)
-				);
+						temporaryHunterParams.size
+					);
+				});
+
+				console.log("creating", prey, hunters);
+
+				setActors([...prey, ...hunters]);
 			}
 		}
 

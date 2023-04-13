@@ -1,10 +1,10 @@
 import "./App.css";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Circle, MapControls, OrbitControls, Sphere, SpotLight, Text } from "@react-three/drei";
-import { FormController } from "./forms/formController";
+import { FormController } from "./forms/paramController";
 import { SIMULATION_STATE, WORLD_STATE } from "./state";
-import { Drawer } from "./world/drawer";
-import { Logic } from "./world/logic";
+import { Drawer } from "./simulation/world/drawer";
+import { Logic } from "./simulation/world/logic";
 import { Object3D, Vector3 } from "three";
 
 Object3D.DEFAULT_UP = new Vector3(0, 0, 1);
