@@ -16,9 +16,8 @@ export class ObserverEntity extends BaseEntity<ObserverEntityProperties> {
 		super("ObserverEntity", { radius: radius });
 	}
 
-	getAllActorsVisibleToMe(allActors: Actor[]): VisibleActor[] {
+	getAllActorDistances(allActors: Actor[]): VisibleActor[] {
 		const myPosition = this.getActorInstance().getEntityFromActor("PositionEntity") as PositionEntity;
-		const myShape = this.getActorInstance().getEntityFromActor("ShapeEntity") as unknown as ShapeEntity;
 
 		const informationalActors = allActors.map((v) => {
 			const position = v.getEntityFromActor("PositionEntity") as PositionEntity;
@@ -31,11 +30,7 @@ export class ObserverEntity extends BaseEntity<ObserverEntityProperties> {
 			};
 		});
 
-		const allVisibleActors = informationalActors.filter((v) => {
-			return v.distance.distance - myShape.getProperty("size") - v.shape.getProperty("size") < this.getProperty("radius");
-		});
-
-		const actorInfo = allVisibleActors.map<VisibleActor>((v) => {
+		const actorInfo = informationalActors.map<VisibleActor>((v) => {
 			const distance = v.distance.distance;
 			const direction = v.distance.direction;
 			return {
@@ -48,8 +43,44 @@ export class ObserverEntity extends BaseEntity<ObserverEntityProperties> {
 		return actorInfo.sort((a, b) => a.distance - b.distance);
 	}
 
+	getAllActorsVisibleToMe(allActors: Actor[]): VisibleActor[] {
+		const myShape = this.getActorInstance().getEntityFromActor("ShapeEntity") as unknown as ShapeEntity;
+
+		const actorDistances = this.getAllActorDistances(allActors);
+
+		const informationalActors = actorDistances.map((v) => {
+			const shape = v.actor.getEntityFromActor("ShapeEntity") as unknown as ShapeEntity;
+
+			return {
+				...v,
+				shape: shape,
+			};
+		});
+
+		const allVisibleActors = informationalActors.filter((v) => {
+			return v.distance - myShape.getProperty("size") - v.shape.getProperty("size") < this.getProperty("radius");
+		});
+
+		const cleanDistances = allVisibleActors.map<VisibleActor>((v) => {
+			return {
+				actor: v.actor,
+				direction: v.direction,
+				distance: v.distance,
+			};
+		});
+
+		return cleanDistances;
+	}
+
 	getClosestActorVisibleToMe(allActors: Actor[]) {
 		const closest = this.getAllActorsVisibleToMe(allActors);
+		if (closest.length === 0) return null;
+
+		return closest[0];
+	}
+
+	getClosestActor(allActors: Actor[]) {
+		const closest = this.getAllActorDistances(allActors);
 		if (closest.length === 0) return null;
 
 		return closest[0];

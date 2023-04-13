@@ -1,8 +1,6 @@
 import React, { ChangeEventHandler, ReactElement, useState } from "react";
 import { Terrain } from "../simulation/world/worldGenerator";
 import { ACTOR_STATE, INITIAL_HUNTER_PROPERTIES, INITIAL_PREY_PROPERTIES, SIMULATION_STATE, WORLD_STATE } from "../state";
-import { Prey } from "../simulation/figures/realActors/prey";
-import { Hunter } from "../simulation/figures/realActors/hunter";
 import { ActorFactory } from "../simulation/figures/actors/actorFactory";
 
 const FormElementForNumber: React.FC<

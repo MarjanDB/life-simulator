@@ -1,5 +1,8 @@
-import { Vector2 } from "three";
-import { MINIMUM_BORDER_DISTANCE, WorldTerrain } from "../world/worldGenerator";
+import { Vector, Vector2 } from "three";
+import { MINIMUM_BORDER_DISTANCE, Terrain, WorldTerrain } from "../world/worldGenerator";
+import { VisibleActor } from "../figures/entities/observerEntity";
+
+const MINIMUM_WATER_DISTANCE = 1.25;
 
 export default class MovementCalculator {
 	length: number = 0;
@@ -43,6 +46,17 @@ export default class MovementCalculator {
 		totalForce.add(diffY.multiplyScalar(MINIMUM_BORDER_DISTANCE - diffLengthY).multiplyScalar(-5));
 
 		return totalForce;
+	}
+
+	public static getDeepWaterRepulsion(deepWater: VisibleActor) {
+		const direction = deepWater.direction.clone();
+
+		const clampedDistance = Math.min(deepWater.distance, MINIMUM_WATER_DISTANCE);
+		const inversedDistance = MINIMUM_WATER_DISTANCE - clampedDistance;
+
+		const force = direction.multiplyScalar(inversedDistance).multiplyScalar(-10);
+
+		return force;
 	}
 
 	public static randomMovement(multiplier = 1) {

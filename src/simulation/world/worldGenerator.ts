@@ -4,9 +4,9 @@ import { Actor } from "../figures/actors/actor";
 import { PositionEntity } from "../figures/entities/positionEntity";
 import { ShapeEntity } from "../figures/entities/shapeEntity";
 
-export const MINIMUM_BORDER_DISTANCE = 8;
+export const MINIMUM_BORDER_DISTANCE = 3;
 
-export type TerrainType = "WATER" | "GRASS" | "FOREST" | "SAND" | "MOUNTAIN" | "MOUNTAIN PEAK" | "BORDER";
+export type TerrainType = "WATER" | "DEEP WATER" | "GRASS" | "FOREST" | "SAND" | "MOUNTAIN" | "MOUNTAIN PEAK" | "BORDER";
 
 export type WorldTerrain = Terrain[][];
 
@@ -17,7 +17,7 @@ export type WorldTerrainGeneratorParams = {
 };
 
 export class Terrain extends Actor {
-	constructor(public readonly type: TerrainType, position: Vector3) {
+	constructor(public type: TerrainType, position: Vector3) {
 		const positionEntity = new PositionEntity(position);
 		const shapeEntity = new ShapeEntity(1, "BOX");
 		super([positionEntity, shapeEntity]);
@@ -72,6 +72,22 @@ export class Terrain extends Actor {
 
 		const terrain = generatedTerrain.map((row, y) => row.map((v, x) => parseTerrainBlock(x, y, v)));
 
+		// Detect and assign deep water
+		for (let y = 1; y < size - 1; y++) {
+			for (let x = 1; x < size - 1; x++) {
+				const top = terrain[y - 1][x];
+				const bottom = terrain[y + 1][x];
+				const left = terrain[y][x - 1];
+				const right = terrain[y][x + 1];
+
+				const types = [top, bottom, left, right].map((v) => v.type);
+				const allWaterTypes = types.reduce((prev, cur) => prev && (cur === "WATER" || cur === "DEEP WATER"), true);
+				if (!allWaterTypes) continue;
+
+				terrain[y][x].type = "DEEP WATER";
+			}
+		}
+
 		console.log("terrain", terrain);
 
 		return terrain;
@@ -84,7 +100,7 @@ export class Terrain extends Actor {
 
 		const validYPositions = terrain.filter((v, y) => y > lowerWorldLimit && y < upperWorldLimit);
 		const validPositions = validYPositions
-			.map((v) => v.filter((t, x) => x > lowerWorldLimit && x < upperWorldLimit && t.type !== "WATER"))
+			.map((v) => v.filter((t, x) => x > lowerWorldLimit && x < upperWorldLimit && t.type !== "WATER" && t.type !== "DEEP WATER"))
 			.filter((v) => v.length > 0);
 
 		if (validPositions.length === 0) throw `No position to generate on`;
@@ -117,6 +133,8 @@ export class Terrain extends Actor {
 				return "gold";
 			case "WATER":
 				return "skyBlue";
+			case "DEEP WATER":
+				return "blue";
 		}
 	}
 }

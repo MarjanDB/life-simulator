@@ -42,30 +42,25 @@ export class AnimalBehaviorEntity extends BaseEntity<AnimalBehaviorProperties> {
 		const shapeEntity = this.getActorInstance().getEntityFromActor("ShapeEntity") as ShapeEntity;
 
 		const movementCalculator = new MovementCalculator();
+		const closestDeepWater = observerEntity.getClosestActor(_.flatten(terrain).filter((v) => v.type === "DEEP WATER"));
 
-		movementCalculator.addToMovement(MovementCalculator.randomMovement());
+		movementCalculator.addToMovement(MovementCalculator.randomMovement(0.5));
 		movementCalculator.addToMovement(MovementCalculator.getBorderRepulsion(terrain, myPosition));
 
 		const orderedNeeds = needsEntity.getOrderedNeeds();
 		console.log("ordered needs", orderedNeeds);
 		let urgentMovement: Vector2 | undefined;
-		let satisfiableNeed = orderedNeeds[0];
-		for (const need of orderedNeeds) {
-			if (urgentMovement) break;
-			switch (need) {
-				case "FOOD":
-					urgentMovement = observerEntity.getClosestActorVisibleToMe(food)?.direction;
-					satisfiableNeed = "FOOD";
-					break;
-				case "MATE":
-					urgentMovement = this.closestMate(kin)?.direction;
-					satisfiableNeed = "MATE";
-					break;
-				case "WATER":
-					urgentMovement = observerEntity.getClosestActorVisibleToMe(_.flatten(terrain).filter((v) => v.type === "WATER"))?.direction;
-					satisfiableNeed = "WATER";
-					break;
-			}
+		const satisfiableNeed = orderedNeeds[0];
+		switch (satisfiableNeed) {
+			case "FOOD":
+				urgentMovement = observerEntity.getClosestActorVisibleToMe(food)?.direction;
+				break;
+			case "MATE":
+				urgentMovement = this.closestMate(kin)?.direction;
+				break;
+			case "WATER":
+				urgentMovement = observerEntity.getClosestActorVisibleToMe(_.flatten(terrain).filter((v) => v.type === "WATER"))?.direction;
+				break;
 		}
 
 		if (urgentMovement) {
@@ -78,6 +73,10 @@ export class AnimalBehaviorEntity extends BaseEntity<AnimalBehaviorProperties> {
 			const adjusted = fear.multiplyScalar(0.95).add(final.multiplyScalar(0.05));
 			movementCalculator.setToMovement(adjusted);
 			movementCalculator.addToMovement(MovementCalculator.getBorderRepulsion(terrain, myPosition));
+		}
+
+		if (closestDeepWater) {
+			movementCalculator.addToMovement(MovementCalculator.getDeepWaterRepulsion(closestDeepWater));
 		}
 
 		movementEntity.accelerateInDirection(movementCalculator.getFinalMovement());

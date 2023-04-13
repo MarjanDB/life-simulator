@@ -17,7 +17,7 @@ export type AnimalWants = "FOOD" | "WATER" | "MATE";
 
 const HUNGER_RATE = 0.01;
 const THIRST_RATE = 0.005;
-const REPRODUCTION_RATE = 0.01;
+const REPRODUCTION_RATE = 0.007;
 
 export class NeedsEntity extends BaseEntity<NeedsEntityProperties> {
 	constructor(scaling?: Partial<Needs>) {
