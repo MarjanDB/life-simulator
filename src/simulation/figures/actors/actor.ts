@@ -4,6 +4,7 @@ import { WorldTerrain } from "../../world/worldGenerator";
 export class Actor {
 	protected readonly entities: BaseEntity<any>[] = [];
 	protected shouldDelete: boolean = false;
+	protected deletionReason: string | null = null;
 
 	constructor(entities: BaseEntity<any>[] = []) {
 		for (const entity of entities) {
@@ -15,8 +16,13 @@ export class Actor {
 		return this.shouldDelete;
 	}
 
-	public markForDeletion() {
+	public deleteReason() {
+		return this.deletionReason;
+	}
+
+	public markForDeletion(reason?: string) {
 		this.shouldDelete = true;
+		if (reason) this.deletionReason = reason;
 	}
 
 	public addEntityToActor(entity: BaseEntity<any>) {

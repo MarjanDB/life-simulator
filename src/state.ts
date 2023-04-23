@@ -1,8 +1,5 @@
 import { WorldTerrain, WorldTerrainGeneratorParams } from "./simulation/world/worldGenerator";
 import { create } from "zustand";
-import { Food } from "./simulation/figures/realActors/food";
-import { Prey } from "./simulation/figures/realActors/prey";
-import { Hunter } from "./simulation/figures/realActors/hunter";
 import { Actor } from "./simulation/figures/actors/actor";
 
 type worldState = WorldTerrainGeneratorParams & {

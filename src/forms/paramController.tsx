@@ -2,6 +2,9 @@ import React, { ChangeEventHandler, ReactElement, useState } from "react";
 import { Terrain } from "../simulation/world/worldGenerator";
 import { ACTOR_STATE, INITIAL_HUNTER_PROPERTIES, INITIAL_PREY_PROPERTIES, SIMULATION_STATE, WORLD_STATE } from "../state";
 import { ActorFactory } from "../simulation/figures/actors/actorFactory";
+import globalServices from "../simulation/figures/service/globalServices";
+import { StatisticsService } from "../simulation/figures/service/statisticsService";
+import { json2csv } from "json-2-csv";
 
 const FormElementForNumber: React.FC<
 	React.HTMLProps<HTMLInputElement> & {
@@ -43,7 +46,7 @@ const FormElementForString: React.FC<
 		propertyName: string;
 		valueCallback: (value: string) => void;
 	}
-> = ({ min, max, step, defaultValue, valueCallback, propertyName, ...props }) => {
+> = ({ defaultValue, valueCallback, propertyName, ...props }) => {
 	const onChange: ChangeEventHandler<HTMLInputElement> = (e) => {
 		const value = e.target.value;
 		valueCallback(value);
@@ -58,6 +61,15 @@ const FormElementForString: React.FC<
 		</div>
 	);
 };
+
+async function exportRunStatistics() {
+	const statisticsService = globalServices.getServiceInstance("StatisticsService") as StatisticsService;
+	const statistics = statisticsService.getObservations();
+	const csv = await json2csv(statistics);
+	const blob = new Blob([csv], { type: "text/csv" });
+	const url = URL.createObjectURL(blob);
+	window.open(url);
+}
 
 export const FormController: React.FC = () => {
 	const initialHunterParams = INITIAL_HUNTER_PROPERTIES();
@@ -219,6 +231,9 @@ export const FormController: React.FC = () => {
 			<div className="flex flex-row flex-wrap">{simulationParams}</div>
 			<button className="bg-slate-100 m-2 mx-auto w-full" onClick={toggleRunning}>
 				{initialSimulationState.running ? "Stop" : "Start"}
+			</button>
+			<button className="bg-slate-100 m-2 mx-auto w-full" onClick={exportRunStatistics}>
+				Export Statistics
 			</button>
 		</div>
 	);

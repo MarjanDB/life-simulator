@@ -11,6 +11,8 @@ import { MovementEntity } from "./movementEntity";
 import { ShapeEntity } from "./shapeEntity";
 import globalServices from "../service/globalServices";
 import { AnimalMatingService } from "../service/animalMatingService";
+import { StatisticsService } from "../service/statisticsService";
+import { MetadataEntity } from "./metadataEntity";
 
 export type AnimalSex = "MALE" | "FEMALE";
 
@@ -41,6 +43,10 @@ export class AnimalBehaviorEntity extends BaseEntity<AnimalBehaviorProperties> {
 		const movementEntity = this.getActorInstance().getEntityFromActor("MovementEntity") as MovementEntity;
 		const shapeEntity = this.getActorInstance().getEntityFromActor("ShapeEntity") as ShapeEntity;
 
+		const metadataEntity = this.getActorInstance().getEntityFromActor("MetadataEntity") as MetadataEntity;
+		const statisticsService = globalServices.getServiceInstance("StatisticsService") as StatisticsService;
+		const animalCategory = metadataEntity.getProperty("category");
+
 		const movementCalculator = new MovementCalculator();
 		const closestDeepWater = observerEntity.getClosestActor(_.flatten(terrain).filter((v) => v.type === "DEEP WATER"));
 
@@ -48,7 +54,6 @@ export class AnimalBehaviorEntity extends BaseEntity<AnimalBehaviorProperties> {
 		movementCalculator.addToMovement(MovementCalculator.getBorderRepulsion(terrain, myPosition));
 
 		const orderedNeeds = needsEntity.getOrderedNeeds();
-		console.log("ordered needs", orderedNeeds);
 		let urgentMovement: Vector2 | undefined;
 		const satisfiableNeed = orderedNeeds[0];
 		switch (satisfiableNeed) {
@@ -97,7 +102,7 @@ export class AnimalBehaviorEntity extends BaseEntity<AnimalBehaviorProperties> {
 
 			if (canEat) {
 				needsEntity.satisfyNeed("FOOD");
-				closestFood.actor.markForDeletion();
+				closestFood.actor.markForDeletion("eaten");
 			}
 		}
 
@@ -170,7 +175,7 @@ export class AnimalBehaviorEntity extends BaseEntity<AnimalBehaviorProperties> {
 		const smallestMate = Math.min(...mateSizes);
 		const largestMate = Math.min(...mateSizes);
 
-		const mateScoringFunction = (mate: typeof matesWithSizes[0]) => {
+		const mateScoringFunction = (mate: (typeof matesWithSizes)[0]) => {
 			const distanceOfMate = mate.distance;
 			const normalizedDistance = (distanceOfMate - shortestDistance) / (longestDistance - shortestDistance);
 

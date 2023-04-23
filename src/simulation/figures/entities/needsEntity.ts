@@ -15,9 +15,9 @@ export type NeedsEntityProperties = {
 
 export type AnimalWants = "FOOD" | "WATER" | "MATE";
 
-const HUNGER_RATE = 0.01;
-const THIRST_RATE = 0.005;
-const REPRODUCTION_RATE = 0.007;
+const HUNGER_RATE = 0.02;
+const THIRST_RATE = 0.01;
+const REPRODUCTION_RATE = 0.008;
 
 export class NeedsEntity extends BaseEntity<NeedsEntityProperties> {
 	constructor(scaling?: Partial<Needs>) {
@@ -38,7 +38,10 @@ export class NeedsEntity extends BaseEntity<NeedsEntityProperties> {
 		needs.reproduction = Math.min(1, needs.reproduction + delta * scaling.reproduction);
 		needs.thirst = Math.min(1, needs.thirst + delta * scaling.thirst);
 
-		if (this.shouldDie()) this.getActorInstance().markForDeletion();
+		if (this.shouldDie()) {
+			const reason = needs.hunger === 1 ? "hunger" : "thirst";
+			this.getActorInstance().markForDeletion(reason);
+		}
 	}
 
 	getOrderedNeeds(): AnimalWants[] {

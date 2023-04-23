@@ -5,12 +5,11 @@ import { BaseEntity } from "./baseEntity";
 export type AgeEntityProperties = {
 	age: number;
 	ageOfDeath: number | null;
-	isAlive: boolean;
 };
 
 export class AgeEntity extends BaseEntity<AgeEntityProperties> {
 	constructor(ageOfDeath: number | null) {
-		super("AgeEntity", { age: 0, ageOfDeath: ageOfDeath, isAlive: true });
+		super("AgeEntity", { age: 0, ageOfDeath: ageOfDeath });
 	}
 
 	override act(terrain: WorldTerrain, otherActors: Actor[], delta: number): void {
@@ -19,7 +18,11 @@ export class AgeEntity extends BaseEntity<AgeEntityProperties> {
 
 		const deathAt = this.getProperty("ageOfDeath");
 		if (deathAt && currentAge > deathAt) {
-			this.getActorInstance().markForDeletion();
+			this.getActorInstance().markForDeletion("age");
 		}
+	}
+
+	public getAge() {
+		return this.getProperty("age");
 	}
 }

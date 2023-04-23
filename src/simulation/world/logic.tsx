@@ -1,5 +1,4 @@
-import { act, useFrame } from "@react-three/fiber";
-import { Vector3 } from "three";
+import { useFrame } from "@react-three/fiber";
 import { ACTOR_STATE, SIMULATION_STATE, WORLD_STATE } from "../../state";
 import { Terrain, WorldTerrain, MINIMUM_BORDER_DISTANCE } from "./worldGenerator";
 import { Actor } from "../figures/actors/actor";
@@ -9,6 +8,10 @@ import { useEffect } from "react";
 import globalServices from "../figures/service/globalServices";
 import { IntervalSpawnerService } from "../figures/service/intervalSpawnerService";
 import { ActorFactory } from "../figures/actors/actorFactory";
+import { TimeService } from "../figures/service/timeService";
+import { StatisticsService } from "../figures/service/statisticsService";
+import { MetadataEntity } from "../figures/entities/metadataEntity";
+import _ from "lodash";
 
 export const Logic: React.FC = () => {
 	const mutationRate = SIMULATION_STATE((v) => v.mutationRate);
@@ -24,6 +27,8 @@ export const Logic: React.FC = () => {
 	useEffect(() => {
 		const actorCreatorService = new ActorCreatorService();
 		const animalMatingService = new AnimalMatingService(mutationRate, mutationVariation);
+		const timeService = new TimeService();
+		const statisticsService = new StatisticsService();
 		const intervalSpawnerService = new IntervalSpawnerService();
 		intervalSpawnerService.addSpawner(
 			foodInterval,
@@ -35,11 +40,36 @@ export const Logic: React.FC = () => {
 
 		globalServices.addServiceInstance(actorCreatorService);
 		globalServices.addServiceInstance(animalMatingService);
+		globalServices.addServiceInstance(timeService);
 		globalServices.addServiceInstance(intervalSpawnerService);
+		globalServices.addServiceInstance(statisticsService);
 	});
 
 	useFrame((state, delta) => {
 		const activeActors = actors.filter(isStillActiveFilter);
+		const toDeleteActors = actors.filter((v) => !isStillActiveFilter(v));
+
+		if (toDeleteActors.length !== 0) {
+			const statisticsService = globalServices.getServiceInstance("StatisticsService") as StatisticsService;
+			const categoryAndReason = toDeleteActors.map((v) => {
+				const metadataEntity = v.getEntityFromActor("MetadataEntity") as MetadataEntity;
+				const category = metadataEntity.getProperty("category");
+				return {
+					reason: v.deleteReason(),
+					category,
+				};
+			});
+
+			const groupedCategories = _.groupBy(categoryAndReason, (v) => v.category);
+			const groupedCategoryReasons = Object.fromEntries(Object.entries(groupedCategories).map(([k, v]) => [k, _.groupBy(v, (l) => l.reason)]));
+
+			for (const [category, reasons] of Object.entries(groupedCategoryReasons)) {
+				for (const [reason, counts] of Object.entries(reasons)) {
+					const count = counts.length;
+					statisticsService.noteObservation(category as any, reason as any, count);
+				}
+			}
+		}
 
 		for (const actor of activeActors) {
 			actor.act(
