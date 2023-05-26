@@ -55,7 +55,7 @@ export const Logic: React.FC = () => {
 		if (toDeleteActors.length !== 0) {
 			const statisticsService = globalServices.getServiceInstance(StatisticsService);
 			const categoryAndReason = toDeleteActors.map((v) => {
-				const metadataEntity = v.getEntityFromActor("MetadataEntity") as MetadataEntity;
+				const metadataEntity = v.getEntityFromActor(MetadataEntity);
 				const category = metadataEntity.getProperty("category");
 				return {
 					reason: v.deleteReason(),

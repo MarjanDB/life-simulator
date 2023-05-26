@@ -6,13 +6,14 @@ import { Vector3 } from "three";
 import { PositionEntity } from "../figures/entities/positionEntity";
 import { ShapeEntity } from "../figures/entities/shapeEntity";
 import { Actor } from "../figures/actors/actor";
+import { MetadataEntity } from "../figures/entities/metadataEntity";
 
 const renderAsSpheres = (beings: Actor[], color: string) => {
 	return beings.map((v, index) => {
-		const positionEntity = v.getEntityFromActor("PositionEntity") as PositionEntity;
+		const positionEntity = v.getEntityFromActor(PositionEntity);
 		const position = positionEntity.getProperty("position");
 
-		const shapeEntity = v.getEntityFromActor("ShapeEntity") as ShapeEntity;
+		const shapeEntity = v.getEntityFromActor(ShapeEntity);
 		const size = shapeEntity.getProperty("size");
 
 		return (
@@ -30,7 +31,7 @@ const renderTerrain = (terrain: WorldTerrain) => {
 	const offsetVector = new Vector3(0, 0, +0.5);
 
 	const terrainGeometry = terrainBlocks.map((v, i) => {
-		const positionEntity = v.getEntityFromActor("PositionEntity") as PositionEntity;
+		const positionEntity = v.getEntityFromActor(PositionEntity);
 		const position = positionEntity.getProperty("position");
 
 		return <Box key={i} args={[1, 1, 1]} position={position.clone().sub(offsetVector)} material-color={v.getMyColor()} />;
@@ -42,7 +43,7 @@ const renderTerrain = (terrain: WorldTerrain) => {
 const ActiveScene: React.FC = () => {
 	const actors = ACTOR_STATE((v) => v.actors);
 	const categorized = actors.reduce((prev, cur) => {
-		const category = cur.getEntityFromActor("MetadataEntity").getProperty("category");
+		const category = cur.getEntityFromActor(MetadataEntity).getProperty("category");
 		prev[category] = prev[category] ?? [];
 		prev[category].push(cur);
 		return prev;
