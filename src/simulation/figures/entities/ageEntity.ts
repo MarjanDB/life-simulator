@@ -1,3 +1,4 @@
+import { Entity } from "../../../coreDecorators/className";
 import { WorldTerrain } from "../../world/worldGenerator";
 import { Actor } from "../actors/actor";
 import { GlobalServices } from "../service/globalServices";
@@ -8,9 +9,10 @@ export type AgeEntityProperties = {
 	ageOfDeath: number | null;
 };
 
+@Entity("AgeEntity")
 export class AgeEntity extends BaseEntity<AgeEntityProperties> {
 	constructor(ageOfDeath: number | null) {
-		super("AgeEntity", { age: 0, ageOfDeath: ageOfDeath });
+		super({ age: 0, ageOfDeath: ageOfDeath });
 	}
 
 	override act(terrain: WorldTerrain, otherActors: Actor[], delta: number, globalServices: GlobalServices): void {

@@ -1,3 +1,4 @@
+import { Entity } from "../../../coreDecorators/className";
 import { Actor } from "../actors/actor";
 import { BaseEntity } from "./baseEntity";
 import { DirectionAndDistance, PositionEntity } from "./positionEntity";
@@ -11,17 +12,18 @@ export type VisibleActor = {
 	actor: Actor;
 } & DirectionAndDistance;
 
+@Entity("ObserverEntity")
 export class ObserverEntity extends BaseEntity<ObserverEntityProperties> {
 	constructor(radius: number) {
-		super("ObserverEntity", { radius: radius });
+		super({ radius: radius });
 	}
 
 	getAllActorDistances(allActors: Actor[]): VisibleActor[] {
-		const myPosition = this.getActorInstance().getEntityFromActor("PositionEntity") as PositionEntity;
+		const myPosition = this.getActorInstance().getEntityFromActor(PositionEntity);
 
 		const informationalActors = allActors.map((v) => {
-			const position = v.getEntityFromActor("PositionEntity") as PositionEntity;
-			const shape = v.getEntityFromActor("ShapeEntity") as unknown as ShapeEntity;
+			const position = v.getEntityFromActor(PositionEntity);
+			const shape = v.getEntityFromActor(ShapeEntity);
 
 			return {
 				shape: shape,
@@ -44,12 +46,12 @@ export class ObserverEntity extends BaseEntity<ObserverEntityProperties> {
 	}
 
 	getAllActorsVisibleToMe(allActors: Actor[]): VisibleActor[] {
-		const myShape = this.getActorInstance().getEntityFromActor("ShapeEntity") as unknown as ShapeEntity;
+		const myShape = this.getActorInstance().getEntityFromActor(ShapeEntity);
 
 		const actorDistances = this.getAllActorDistances(allActors);
 
 		const informationalActors = actorDistances.map((v) => {
-			const shape = v.actor.getEntityFromActor("ShapeEntity") as unknown as ShapeEntity;
+			const shape = v.actor.getEntityFromActor(ShapeEntity);
 
 			return {
 				...v,

@@ -9,26 +9,26 @@ describe("actors", () => {
 	});
 
 	it("should have no entities on creation", () => {
-		const entities = actor.getAllEntities();
+		const entities = Array.from(actor.getAllEntities());
 		expect(entities).toHaveLength(0);
 	});
 
 	it("should accept BaseEntity instances", () => {
-		const entity = new BaseEntity("BaseEntity", {});
+		const entity = new BaseEntity({});
 		actor.addEntityToActor(entity);
-		const actorEntityInstance = actor.getEntityFromActor("BaseEntity");
+		const actorEntityInstance = actor.getEntityFromActor(BaseEntity);
 		expect(actorEntityInstance).toEqual(entity);
 	});
 
 	it("should throw on non-existant BaseEntity instance", () => {
-		const toFail = () => actor.getEntityFromActor("test");
+		const toFail = () => actor.getEntityFromActor(BaseEntity);
 		expect(toFail).toThrow();
 	});
 
 	it("should be possible to retrieve a BaseEntity instance", () => {
-		const entity = new BaseEntity("BaseEntity", {});
+		const entity = new BaseEntity({});
 		actor.addEntityToActor(entity);
-		const actorEntityInstance = actor.getEntityFromActor("BaseEntity");
+		const actorEntityInstance = actor.getEntityFromActor(BaseEntity);
 		expect(actorEntityInstance).toEqual(entity);
 	});
 

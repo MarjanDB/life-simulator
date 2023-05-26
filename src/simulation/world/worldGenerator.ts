@@ -113,7 +113,7 @@ export class Terrain extends Actor {
 
 		if (!matchingTerrain) throw `Terrain does not exist for position y: ${y} | x: ${x}`;
 
-		const positionEntity = matchingTerrain.getEntityFromActor("PositionEntity") as PositionEntity;
+		const positionEntity = matchingTerrain.getEntityFromActor(PositionEntity);
 
 		return positionEntity.getProperty("position").clone();
 	}

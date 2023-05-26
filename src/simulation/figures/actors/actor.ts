@@ -1,9 +1,10 @@
 import { BaseEntity } from "../entities/baseEntity";
 import { WorldTerrain } from "../../world/worldGenerator";
 import { GlobalServices } from "../service/globalServices";
+import { getInstanceName, getName } from "../../../coreDecorators/className";
 
 export class Actor {
-	protected readonly entities: BaseEntity<any>[] = [];
+	protected readonly entities: Map<string, BaseEntity<any>> = new Map();
 	protected shouldDelete: boolean = false;
 	protected deletionReason: string | null = null;
 
@@ -27,16 +28,19 @@ export class Actor {
 	}
 
 	public addEntityToActor(entity: BaseEntity<any>) {
-		const existing = this.entities.find((v) => v.name === entity.name) !== undefined;
+		const entityKey = getInstanceName(entity);
+		const existing = this.entities.has(entityKey);
 		if (existing) return;
+
 		entity.registerActorToEntity(this);
-		this.entities.push(entity);
+		this.entities.set(entityKey, entity);
 	}
 
-	public getEntityFromActor(name: string) {
-		const entity = this.entities.find((v) => v.name === name);
-		if (!entity) throw `Entity ${name} not found on instance of actor`;
-		return entity;
+	public getEntityFromActor<T extends BaseEntity<any>>(entity: new (...args: any[]) => T): T {
+		const entityKey = getName(entity);
+		const existing = this.entities.has(entityKey);
+		if (!existing) throw `Entity ${entityKey} not found on instance of actor`;
+		return this.entities.get(entityKey) as T;
 	}
 
 	public getGlobalServices() {
@@ -44,11 +48,11 @@ export class Actor {
 	}
 
 	public getAllEntities() {
-		return this.entities;
+		return this.entities.values();
 	}
 
 	public act(terrain: WorldTerrain, otherActors: Actor[], delta: number, globalServices: GlobalServices) {
-		for (const entity of this.entities) {
+		for (const entity of this.entities.values()) {
 			entity.act(terrain, otherActors, delta, globalServices);
 		}
 	}

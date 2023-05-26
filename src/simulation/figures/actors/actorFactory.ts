@@ -13,7 +13,7 @@ import { GlobalServices } from "../service/globalServices";
 export class ActorFactory {
 	private static assertActorIsOfCategory(category: string): ActorFilter {
 		return (actor: Actor) => {
-			const metadataEntity = actor.getEntityFromActor("MetadataEntity") as MetadataEntity;
+			const metadataEntity = actor.getEntityFromActor(MetadataEntity);
 			return metadataEntity.getProperty("category") === category;
 		};
 	}

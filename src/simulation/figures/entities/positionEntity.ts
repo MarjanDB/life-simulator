@@ -2,6 +2,7 @@ import { Vector2, Vector3 } from "three";
 import { BaseEntity } from "./baseEntity";
 import { Actor } from "../actors/actor";
 import { WorldTerrain } from "../../world/worldGenerator";
+import { Entity } from "../../../coreDecorators/className";
 
 export type PositionEntityProperties = {
 	position: Vector3;
@@ -13,9 +14,10 @@ export type DirectionAndDistance = {
 	direction: Vector2;
 };
 
+@Entity("PositionEntity")
 export class PositionEntity extends BaseEntity<PositionEntityProperties> {
 	constructor(position: Vector3) {
-		super("PositionEntity", { position: position, positionAs2D: new Vector2(position.x, position.y) });
+		super({ position: position, positionAs2D: new Vector2(position.x, position.y) });
 	}
 
 	updatePosition(newPosition: { x: number; y: number; z: number }) {
@@ -26,7 +28,7 @@ export class PositionEntity extends BaseEntity<PositionEntityProperties> {
 	}
 
 	distanceToActor(other: Actor) {
-		const otherPosition = other.getEntityFromActor(this.name) as PositionEntity;
+		const otherPosition = other.getEntityFromActor(PositionEntity);
 		return this.distanceToAnother(otherPosition);
 	}
 

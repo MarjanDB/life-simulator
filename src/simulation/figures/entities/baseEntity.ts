@@ -1,3 +1,4 @@
+import { getInstanceName } from "../../../coreDecorators/className";
 import { WorldTerrain } from "../../world/worldGenerator";
 import { Actor } from "../actors/actor";
 import { GlobalServices } from "../service/globalServices";
@@ -5,7 +6,7 @@ import { GlobalServices } from "../service/globalServices";
 export class BaseEntity<T> {
 	private actorInstance?: Actor;
 
-	constructor(public readonly name: string, protected entityProperties: T, actorInstance?: Actor) {
+	constructor(protected entityProperties: T, actorInstance?: Actor) {
 		if (actorInstance) {
 			this.actorInstance = actorInstance;
 			this.actorInstance.addEntityToActor(this);
@@ -13,13 +14,13 @@ export class BaseEntity<T> {
 	}
 
 	protected getActorInstance() {
-		if (!this.actorInstance) throw `No Actor registered to ${this.name}`;
+		if (!this.actorInstance) throw `No Actor registered to ${getInstanceName(this)}`;
 
 		return this.actorInstance;
 	}
 
 	public registerActorToEntity(actor: Actor) {
-		if (this.actorInstance) throw `An Actor Instance was already registered for ${this.name}`;
+		if (this.actorInstance) throw `An Actor Instance was already registered for ${getInstanceName(this)}`;
 		this.actorInstance = actor;
 	}
 

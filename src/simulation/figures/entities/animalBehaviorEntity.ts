@@ -13,6 +13,7 @@ import { AnimalMatingService } from "../service/animalMatingService";
 import { StatisticsService } from "../service/statisticsService";
 import { MetadataEntity } from "./metadataEntity";
 import { GlobalServices } from "../service/globalServices";
+import { Entity } from "../../../coreDecorators/className";
 
 export type AnimalSex = "MALE" | "FEMALE";
 
@@ -25,9 +26,10 @@ export type AnimalBehaviorProperties = {
 	hunterFilter: ActorFilter;
 };
 
+@Entity("AnimalBehaviorEntity")
 export class AnimalBehaviorEntity extends BaseEntity<AnimalBehaviorProperties> {
 	constructor(sex: AnimalSex, foodFilter: ActorFilter, kinFilter: ActorFilter, hunterFilter: ActorFilter) {
-		super("AnimalBehaviorEntity", { sex, foodFilter, kinFilter, hunterFilter });
+		super({ sex, foodFilter, kinFilter, hunterFilter });
 	}
 
 	override act(terrain: WorldTerrain, otherActors: Actor[], delta: number, globalServices: GlobalServices): void {
@@ -35,15 +37,15 @@ export class AnimalBehaviorEntity extends BaseEntity<AnimalBehaviorProperties> {
 		const kin = otherActors.filter(this.getProperty("kinFilter"));
 		const hunters = otherActors.filter(this.getProperty("hunterFilter"));
 
-		const positionEntity = this.getActorInstance().getEntityFromActor("PositionEntity") as PositionEntity;
+		const positionEntity = this.getActorInstance().getEntityFromActor(PositionEntity);
 		const myPosition = positionEntity.getProperty("positionAs2D").clone();
 
-		const needsEntity = this.getActorInstance().getEntityFromActor("NeedsEntity") as NeedsEntity;
-		const observerEntity = this.getActorInstance().getEntityFromActor("ObserverEntity") as ObserverEntity;
-		const movementEntity = this.getActorInstance().getEntityFromActor("MovementEntity") as MovementEntity;
-		const shapeEntity = this.getActorInstance().getEntityFromActor("ShapeEntity") as ShapeEntity;
+		const needsEntity = this.getActorInstance().getEntityFromActor(NeedsEntity);
+		const observerEntity = this.getActorInstance().getEntityFromActor(ObserverEntity);
+		const movementEntity = this.getActorInstance().getEntityFromActor(MovementEntity);
+		const shapeEntity = this.getActorInstance().getEntityFromActor(ShapeEntity);
 
-		const metadataEntity = this.getActorInstance().getEntityFromActor("MetadataEntity") as MetadataEntity;
+		const metadataEntity = this.getActorInstance().getEntityFromActor(MetadataEntity);
 		const statisticsService = globalServices.getServiceInstance(StatisticsService);
 		const animalCategory = metadataEntity.getProperty("category");
 
@@ -97,8 +99,7 @@ export class AnimalBehaviorEntity extends BaseEntity<AnimalBehaviorProperties> {
 
 			const canEat =
 				closestFood &&
-				closestFood.distance <
-					shapeEntity.getProperty("size") + (closestFood.actor.getEntityFromActor("ShapeEntity") as ShapeEntity).getProperty("size");
+				closestFood.distance < shapeEntity.getProperty("size") + closestFood.actor.getEntityFromActor(ShapeEntity).getProperty("size");
 
 			if (canEat) {
 				needsEntity.satisfyNeed("FOOD");
@@ -110,8 +111,7 @@ export class AnimalBehaviorEntity extends BaseEntity<AnimalBehaviorProperties> {
 			const closestMate = this.closestMate(kin);
 			const canMate =
 				closestMate &&
-				closestMate.distance <
-					shapeEntity.getProperty("size") + (closestMate.actor.getEntityFromActor("ShapeEntity") as ShapeEntity).getProperty("size");
+				closestMate.distance < shapeEntity.getProperty("size") + closestMate.actor.getEntityFromActor(ShapeEntity).getProperty("size");
 
 			if (canMate) {
 				needsEntity.satisfyNeed("MATE");
@@ -122,7 +122,7 @@ export class AnimalBehaviorEntity extends BaseEntity<AnimalBehaviorProperties> {
 	}
 
 	protected momentumFromFearOfHunters(hunters: Actor[]) {
-		const observerEntity = this.getActorInstance().getEntityFromActor("ObserverEntity") as ObserverEntity;
+		const observerEntity = this.getActorInstance().getEntityFromActor(ObserverEntity);
 
 		const closestHunters = observerEntity.getAllActorsVisibleToMe(hunters);
 		if (closestHunters.length === 0) return new Vector2(0, 0);
@@ -144,13 +144,13 @@ export class AnimalBehaviorEntity extends BaseEntity<AnimalBehaviorProperties> {
 	protected closestMate(otherAnimals: Actor[]): VisibleActor | null {
 		const mySex = this.getProperty("sex");
 		const allOppositeSexAnimals = otherAnimals.filter((v) => {
-			const behaviorEntity = v.getEntityFromActor("AnimalBehaviorEntity") as AnimalBehaviorEntity;
+			const behaviorEntity = v.getEntityFromActor(AnimalBehaviorEntity);
 			return behaviorEntity.getProperty("sex") === (mySex === "MALE" ? "FEMALE" : "MALE");
 		});
 
 		if (allOppositeSexAnimals.length === 0) return null;
 
-		const myObservableRadius = this.getActorInstance().getEntityFromActor("ObserverEntity") as ObserverEntity;
+		const myObservableRadius = this.getActorInstance().getEntityFromActor(ObserverEntity);
 
 		const matesWithDistances = myObservableRadius.getAllActorsVisibleToMe(allOppositeSexAnimals);
 
@@ -159,7 +159,7 @@ export class AnimalBehaviorEntity extends BaseEntity<AnimalBehaviorProperties> {
 		if (matesWithDistances.length === 1) return matesWithDistances[0];
 
 		const matesWithSizes = matesWithDistances.map((v) => {
-			const shapeEntity = v.actor.getEntityFromActor("ShapeEntity") as ShapeEntity;
+			const shapeEntity = v.actor.getEntityFromActor(ShapeEntity);
 
 			return {
 				...v,

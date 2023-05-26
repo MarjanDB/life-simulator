@@ -1,3 +1,4 @@
+import { Entity } from "../../../coreDecorators/className";
 import { WorldTerrain } from "../../world/worldGenerator";
 import { Actor } from "../actors/actor";
 import { GlobalServices } from "../service/globalServices";
@@ -20,6 +21,7 @@ const HUNGER_RATE = 0.02;
 const THIRST_RATE = 0.01;
 const REPRODUCTION_RATE = 0.008;
 
+@Entity("NeedsEntity")
 export class NeedsEntity extends BaseEntity<NeedsEntityProperties> {
 	constructor(scaling?: Partial<Needs>) {
 		const defaultScaling: Needs = {
@@ -28,7 +30,7 @@ export class NeedsEntity extends BaseEntity<NeedsEntityProperties> {
 			reproduction: scaling?.reproduction ?? REPRODUCTION_RATE,
 		};
 
-		super("NeedsEntity", { needs: { hunger: 0, thirst: 0, reproduction: 0 }, needsDeltaScaling: defaultScaling });
+		super({ needs: { hunger: 0, thirst: 0, reproduction: 0 }, needsDeltaScaling: defaultScaling });
 	}
 
 	override act(terrain: WorldTerrain, otherActors: Actor[], delta: number, globalServices: GlobalServices) {

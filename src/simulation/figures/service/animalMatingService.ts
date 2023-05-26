@@ -62,19 +62,19 @@ export class AnimalMatingService extends BaseService<{ pendingPairs: Pair[] }> {
 	}
 
 	protected createChildFromParents(parent1: Actor, parent2: Actor) {
-		const observerEntity1 = parent1.getEntityFromActor("ObserverEntity") as ObserverEntity;
-		const observerEntity2 = parent2.getEntityFromActor("ObserverEntity") as ObserverEntity;
+		const observerEntity1 = parent1.getEntityFromActor(ObserverEntity);
+		const observerEntity2 = parent2.getEntityFromActor(ObserverEntity);
 
-		const movementEntity1 = parent1.getEntityFromActor("MovementEntity") as MovementEntity;
-		const movementEntity2 = parent2.getEntityFromActor("MovementEntity") as MovementEntity;
+		const movementEntity1 = parent1.getEntityFromActor(MovementEntity);
+		const movementEntity2 = parent2.getEntityFromActor(MovementEntity);
 
-		const shapeEntity1 = parent1.getEntityFromActor("ShapeEntity") as ShapeEntity;
-		const shapeEntity2 = parent2.getEntityFromActor("ShapeEntity") as ShapeEntity;
+		const shapeEntity1 = parent1.getEntityFromActor(ShapeEntity);
+		const shapeEntity2 = parent2.getEntityFromActor(ShapeEntity);
 
-		const metadataEntity = parent1.getEntityFromActor("MetadataEntity") as MetadataEntity;
+		const metadataEntity = parent1.getEntityFromActor(MetadataEntity);
 		const parentsCategory = metadataEntity.getProperty("category");
 
-		const positionEntity = parent1.getEntityFromActor("PositionEntity") as PositionEntity;
+		const positionEntity = parent1.getEntityFromActor(PositionEntity);
 
 		const childProperties = {
 			detectionRadius: Math.random() < 0.5 ? observerEntity1.getProperty("radius") : observerEntity2.getProperty("radius"),

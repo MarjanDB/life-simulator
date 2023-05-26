@@ -6,6 +6,10 @@ export function Service(serviceName: string): ClassDecorator {
 	return name(serviceName);
 }
 
+export function Entity(entityName: string): ClassDecorator {
+	return name(entityName);
+}
+
 /**
  * To perserve class name though mangling.
  * @example

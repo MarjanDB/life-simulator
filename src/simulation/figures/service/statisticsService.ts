@@ -81,9 +81,9 @@ export class StatisticsService extends BaseService<{
 		const timeService = this.getGlobalServices().getServiceInstance(TimeService);
 
 		const categorizedActors = allActors.map((v) => {
-			const metadataEntity = v.getEntityFromActor("MetadataEntity") as MetadataEntity;
+			const metadataEntity = v.getEntityFromActor(MetadataEntity);
 			const category = metadataEntity.getProperty("category");
-			const ageEntity = v.getEntityFromActor("AgeEntity") as AgeEntity;
+			const ageEntity = v.getEntityFromActor(AgeEntity);
 
 			return {
 				category,
