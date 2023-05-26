@@ -4,14 +4,14 @@ import { Terrain, WorldTerrain, MINIMUM_BORDER_DISTANCE } from "./worldGenerator
 import { Actor } from "../figures/actors/actor";
 import { ActorCreatorService } from "../figures/service/actorCreatorService";
 import { AnimalMatingService } from "../figures/service/animalMatingService";
-import { useEffect } from "react";
-import globalServices from "../figures/service/globalServices";
+import { useEffect, useState } from "react";
 import { IntervalSpawnerService } from "../figures/service/intervalSpawnerService";
 import { ActorFactory } from "../figures/actors/actorFactory";
 import { TimeService } from "../figures/service/timeService";
 import { StatisticsService } from "../figures/service/statisticsService";
 import { MetadataEntity } from "../figures/entities/metadataEntity";
 import _ from "lodash";
+import { GlobalServices } from "../figures/service/globalServices";
 
 export const Logic: React.FC = () => {
 	const mutationRate = SIMULATION_STATE((v) => v.mutationRate);
@@ -20,6 +20,7 @@ export const Logic: React.FC = () => {
 	const foodGeneratedPerInterval = SIMULATION_STATE((v) => v.foodGeneratedPerInterval);
 
 	const [actors, setActors] = ACTOR_STATE((v) => [v.actors, v.setActors]);
+	const [globalServices, setGlobalServices] = ACTOR_STATE((v) => [v.globalServices, v.setGlobalServices]);
 	const terrain = WORLD_STATE((v) => v.terrain);
 
 	const isStillActiveFilter = (v: Actor) => !v.shouldBeDeleted();
@@ -33,12 +34,14 @@ export const Logic: React.FC = () => {
 		intervalSpawnerService.addSpawner(
 			foodInterval,
 			() => {
-				return ActorFactory.getFood(Terrain.getRandomPosition(terrain));
+				return ActorFactory.getFood(globalServices, Terrain.getRandomPosition(terrain));
 			},
 			foodGeneratedPerInterval
 		);
 
 		globalServices.addServiceInstance(actorCreatorService);
+		globalServices.getServiceInstance(ActorCreatorService);
+
 		globalServices.addServiceInstance(animalMatingService);
 		globalServices.addServiceInstance(timeService);
 		globalServices.addServiceInstance(intervalSpawnerService);
@@ -50,7 +53,7 @@ export const Logic: React.FC = () => {
 		const toDeleteActors = actors.filter((v) => !isStillActiveFilter(v));
 
 		if (toDeleteActors.length !== 0) {
-			const statisticsService = globalServices.getServiceInstance("StatisticsService") as StatisticsService;
+			const statisticsService = globalServices.getServiceInstance(StatisticsService);
 			const categoryAndReason = toDeleteActors.map((v) => {
 				const metadataEntity = v.getEntityFromActor("MetadataEntity") as MetadataEntity;
 				const category = metadataEntity.getProperty("category");
@@ -75,7 +78,8 @@ export const Logic: React.FC = () => {
 			actor.act(
 				terrain,
 				activeActors.filter((v) => v !== actor),
-				delta
+				delta,
+				globalServices
 			);
 		}
 

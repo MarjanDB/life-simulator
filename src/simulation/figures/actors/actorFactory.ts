@@ -8,6 +8,7 @@ import { MovementEntity } from "../entities/movementEntity";
 import { Actor } from "./actor";
 import { MetadataEntity } from "../entities/metadataEntity";
 import { NeedsEntity } from "../entities/needsEntity";
+import { GlobalServices } from "../service/globalServices";
 
 export class ActorFactory {
 	private static assertActorIsOfCategory(category: string): ActorFilter {
@@ -21,7 +22,7 @@ export class ActorFactory {
 		return Array.from({ length: numberOfInstances }).map(generatorFunction);
 	}
 
-	public static getPrey(position: Vector3, detectionRadius: number, sex: AnimalSex, speed: number, size: number) {
+	public static getPrey(globalServices: GlobalServices, position: Vector3, detectionRadius: number, sex: AnimalSex, speed: number, size: number) {
 		const positionEntity = new PositionEntity(position);
 		const shapeEntity = new ShapeEntity(size, "SPHERE");
 		const ageEntity = new AgeEntity(null);
@@ -37,10 +38,19 @@ export class ActorFactory {
 			this.assertActorIsOfCategory("Hunter")
 		);
 
-		return new Actor([positionEntity, shapeEntity, ageEntity, needsEntity, metadataEntity, observerEntity, movementEntity, animalBehaviorEntity]);
+		return new Actor(globalServices, [
+			positionEntity,
+			shapeEntity,
+			ageEntity,
+			needsEntity,
+			metadataEntity,
+			observerEntity,
+			movementEntity,
+			animalBehaviorEntity,
+		]);
 	}
 
-	public static getHunter(position: Vector3, detectionRadius: number, sex: AnimalSex, speed: number, size: number) {
+	public static getHunter(globalServices: GlobalServices, position: Vector3, detectionRadius: number, sex: AnimalSex, speed: number, size: number) {
 		const positionEntity = new PositionEntity(position);
 		const shapeEntity = new ShapeEntity(size, "SPHERE");
 		const ageEntity = new AgeEntity(null);
@@ -56,15 +66,24 @@ export class ActorFactory {
 			(v) => false
 		);
 
-		return new Actor([positionEntity, shapeEntity, ageEntity, needsEntity, metadataEntity, observerEntity, movementEntity, animalBehaviorEntity]);
+		return new Actor(globalServices, [
+			positionEntity,
+			shapeEntity,
+			ageEntity,
+			needsEntity,
+			metadataEntity,
+			observerEntity,
+			movementEntity,
+			animalBehaviorEntity,
+		]);
 	}
 
-	public static getFood(position: Vector3, size = 0.15) {
+	public static getFood(globalServices: GlobalServices, position: Vector3, size = 0.15) {
 		const positionEntity = new PositionEntity(position);
 		const shapeEntity = new ShapeEntity(size, "SPHERE");
 		const ageEntity = new AgeEntity(15);
 		const metadataEntity = new MetadataEntity({ category: "Food" });
 
-		return new Actor([positionEntity, shapeEntity, ageEntity, metadataEntity]);
+		return new Actor(globalServices, [positionEntity, shapeEntity, ageEntity, metadataEntity]);
 	}
 }

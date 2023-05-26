@@ -21,3 +21,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+*.zip
+
+/coverage
+staticna.docx
+porocilo.pdf
+izbire.pdf
+izbire.docx

@@ -3,6 +3,7 @@ import { BaseEntity } from "./baseEntity";
 import { Actor } from "../actors/actor";
 import { PositionEntity } from "./positionEntity";
 import { Terrain, WorldTerrain } from "../../world/worldGenerator";
+import { GlobalServices } from "../service/globalServices";
 
 export type MovementEntityProperties = {
 	maxSpeed: number;
@@ -14,7 +15,7 @@ export class MovementEntity extends BaseEntity<MovementEntityProperties> {
 		super("MovementEntity", { maxSpeed: maxSpeed, momentum: new Vector2() });
 	}
 
-	override act(terrain: WorldTerrain, otherActors: Actor[], delta: number): void {
+	override act(terrain: WorldTerrain, otherActors: Actor[], delta: number, globalServices: GlobalServices): void {
 		const positionEntity = this.getActorInstance().getEntityFromActor("PositionEntity") as unknown as PositionEntity;
 		const currentPosition = positionEntity.getProperty("positionAs2D").clone();
 		const matchingTerrain = Terrain.getTerrainOnPosition(currentPosition.x, currentPosition.y, terrain);

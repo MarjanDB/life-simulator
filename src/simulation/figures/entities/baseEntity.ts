@@ -1,5 +1,6 @@
 import { WorldTerrain } from "../../world/worldGenerator";
 import { Actor } from "../actors/actor";
+import { GlobalServices } from "../service/globalServices";
 
 export class BaseEntity<T> {
 	private actorInstance?: Actor;
@@ -30,5 +31,5 @@ export class BaseEntity<T> {
 		this.entityProperties[property] = value;
 	}
 
-	act(terrain: WorldTerrain, otherActors: Actor[], delta: number) {}
+	act(terrain: WorldTerrain, otherActors: Actor[], delta: number, globalServices: GlobalServices) {}
 }

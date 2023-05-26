@@ -9,10 +9,10 @@ import { ObserverEntity, VisibleActor } from "./observerEntity";
 import _ from "lodash";
 import { MovementEntity } from "./movementEntity";
 import { ShapeEntity } from "./shapeEntity";
-import globalServices from "../service/globalServices";
 import { AnimalMatingService } from "../service/animalMatingService";
 import { StatisticsService } from "../service/statisticsService";
 import { MetadataEntity } from "./metadataEntity";
+import { GlobalServices } from "../service/globalServices";
 
 export type AnimalSex = "MALE" | "FEMALE";
 
@@ -30,7 +30,7 @@ export class AnimalBehaviorEntity extends BaseEntity<AnimalBehaviorProperties> {
 		super("AnimalBehaviorEntity", { sex, foodFilter, kinFilter, hunterFilter });
 	}
 
-	override act(terrain: WorldTerrain, otherActors: Actor[], delta: number): void {
+	override act(terrain: WorldTerrain, otherActors: Actor[], delta: number, globalServices: GlobalServices): void {
 		const food = otherActors.filter(this.getProperty("foodFilter"));
 		const kin = otherActors.filter(this.getProperty("kinFilter"));
 		const hunters = otherActors.filter(this.getProperty("hunterFilter"));
@@ -44,7 +44,7 @@ export class AnimalBehaviorEntity extends BaseEntity<AnimalBehaviorProperties> {
 		const shapeEntity = this.getActorInstance().getEntityFromActor("ShapeEntity") as ShapeEntity;
 
 		const metadataEntity = this.getActorInstance().getEntityFromActor("MetadataEntity") as MetadataEntity;
-		const statisticsService = globalServices.getServiceInstance("StatisticsService") as StatisticsService;
+		const statisticsService = globalServices.getServiceInstance(StatisticsService);
 		const animalCategory = metadataEntity.getProperty("category");
 
 		const movementCalculator = new MovementCalculator();
@@ -115,7 +115,7 @@ export class AnimalBehaviorEntity extends BaseEntity<AnimalBehaviorProperties> {
 
 			if (canMate) {
 				needsEntity.satisfyNeed("MATE");
-				const animalMatingService = globalServices.getServiceInstance("AnimalMatingService") as AnimalMatingService;
+				const animalMatingService = globalServices.getServiceInstance(AnimalMatingService);
 				animalMatingService.matePair(this.getActorInstance(), closestMate.actor);
 			}
 		}

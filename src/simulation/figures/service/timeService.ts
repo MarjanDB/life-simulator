@@ -1,19 +1,21 @@
+import { Service } from "../../../coreDecorators/className";
 import { WorldTerrain } from "../../world/worldGenerator";
 import { Actor } from "../actors/actor";
 import { BaseService } from "./baseService";
 
-export class TimeService extends BaseService {
-	private currentTime = 0;
-
+@Service("TimeService")
+export class TimeService extends BaseService<{ currentTime: number }> {
 	constructor() {
-		super("TimeService");
+		super({
+			currentTime: 0,
+		});
 	}
 
 	act(terrain: WorldTerrain, allActors: Actor[], delta: number): void {
-		this.currentTime += delta;
+		this.setProperty("currentTime", this.getProperty("currentTime") + delta);
 	}
 
 	public getCurrentTime() {
-		return this.currentTime;
+		return this.getProperty("currentTime");
 	}
 }

@@ -1,12 +1,13 @@
 import { BaseEntity } from "../entities/baseEntity";
 import { WorldTerrain } from "../../world/worldGenerator";
+import { GlobalServices } from "../service/globalServices";
 
 export class Actor {
 	protected readonly entities: BaseEntity<any>[] = [];
 	protected shouldDelete: boolean = false;
 	protected deletionReason: string | null = null;
 
-	constructor(entities: BaseEntity<any>[] = []) {
+	constructor(protected readonly globalServices: GlobalServices, entities: BaseEntity<any>[] = []) {
 		for (const entity of entities) {
 			this.addEntityToActor(entity);
 		}
@@ -38,9 +39,17 @@ export class Actor {
 		return entity;
 	}
 
-	public act(terrain: WorldTerrain, otherActors: Actor[], delta: number) {
+	public getGlobalServices() {
+		return this.globalServices;
+	}
+
+	public getAllEntities() {
+		return this.entities;
+	}
+
+	public act(terrain: WorldTerrain, otherActors: Actor[], delta: number, globalServices: GlobalServices) {
 		for (const entity of this.entities) {
-			entity.act(terrain, otherActors, delta);
+			entity.act(terrain, otherActors, delta, globalServices);
 		}
 	}
 }

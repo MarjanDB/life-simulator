@@ -3,6 +3,7 @@ import { Vector3 } from "three";
 import { Actor } from "../figures/actors/actor";
 import { PositionEntity } from "../figures/entities/positionEntity";
 import { ShapeEntity } from "../figures/entities/shapeEntity";
+import { GlobalServices } from "../figures/service/globalServices";
 
 export const MINIMUM_BORDER_DISTANCE = 3;
 
@@ -17,10 +18,10 @@ export type WorldTerrainGeneratorParams = {
 };
 
 export class Terrain extends Actor {
-	constructor(public type: TerrainType, position: Vector3) {
+	constructor(globalServices: GlobalServices, public type: TerrainType, position: Vector3) {
 		const positionEntity = new PositionEntity(position);
 		const shapeEntity = new ShapeEntity(1, "BOX");
-		super([positionEntity, shapeEntity]);
+		super(globalServices, [positionEntity, shapeEntity]);
 	}
 
 	public static getTerrainOnPosition(x: number, y: number, terrain: WorldTerrain): Terrain {
@@ -32,7 +33,7 @@ export class Terrain extends Actor {
 		return matchingTerrain;
 	}
 
-	public static generateTerrain(params: WorldTerrainGeneratorParams): WorldTerrain {
+	public static generateTerrain(params: WorldTerrainGeneratorParams, globalServices: GlobalServices): WorldTerrain {
 		const seed = params.seed;
 		const size = params.size + 2;
 		const resolution = params.resolution;
@@ -67,7 +68,7 @@ export class Terrain extends Actor {
 			// Override terrain type if this is a border
 			if (x === 0 || y === 0 || y === size - 1 || x === size - 1) terrainType = "BORDER";
 
-			return new Terrain(terrainType, position);
+			return new Terrain(globalServices, terrainType, position);
 		};
 
 		const terrain = generatedTerrain.map((row, y) => row.map((v, x) => parseTerrainBlock(x, y, v)));

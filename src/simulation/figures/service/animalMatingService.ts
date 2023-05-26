@@ -10,29 +10,33 @@ import { BaseService } from "./baseService";
 import { MetadataEntity } from "../entities/metadataEntity";
 import { ActorFactory } from "../actors/actorFactory";
 import { PositionEntity } from "../entities/positionEntity";
-import globalServices from "./globalServices";
+import { Service } from "../../../coreDecorators/className";
 
 export type Pair = {
 	parent1: Actor;
 	parent2: Actor;
 };
 
-export class AnimalMatingService extends BaseService {
-	private pendingPairs: Pair[] = [];
-
+@Service("AnimalMatingService")
+export class AnimalMatingService extends BaseService<{ pendingPairs: Pair[] }> {
 	constructor(private readonly mutationRate: number, private readonly variation: number) {
-		super("AnimalMatingService");
+		super({
+			pendingPairs: [],
+		});
 	}
 
 	act(terrain: WorldTerrain, allActors: Actor[], delta: number): void {
-		if (this.pendingPairs.length === 0) return;
+		const pendingPairs = this.getProperty("pendingPairs");
+
+		if (pendingPairs.length === 0) return;
 
 		const pairsToMate: Pair[] = [];
 		const duplicates = new Map<Actor, Actor>();
-		for (const pair of this.pendingPairs) {
+		for (const pair of pendingPairs) {
 			const eitherExists = duplicates.get(pair.parent1) !== undefined || duplicates.get(pair.parent2) !== undefined;
 			if (eitherExists) continue;
 
+			duplicates.set(pair.parent1, pair.parent2); // was missing for test
 			pairsToMate.push(pair);
 		}
 
@@ -40,18 +44,18 @@ export class AnimalMatingService extends BaseService {
 
 		console.log("pairs to mate:", pairsToMate);
 
-		const actorCreatorService = globalServices.getServiceInstance("ActorCreatorService") as ActorCreatorService;
+		const actorCreatorService = this.getGlobalServices().getServiceInstance(ActorCreatorService);
 
 		for (const pair of pairsToMate) {
 			const child = this.createChildFromParents(pair.parent1, pair.parent2);
 			actorCreatorService.addActorToScene(child);
 		}
 
-		this.pendingPairs = [];
+		this.setProperty("pendingPairs", []);
 	}
 
 	matePair(parent1: Actor, parent2: Actor) {
-		this.pendingPairs.push({
+		this.getProperty("pendingPairs").push({
 			parent1,
 			parent2,
 		});
@@ -94,6 +98,7 @@ export class AnimalMatingService extends BaseService {
 		switch (parentsCategory) {
 			case "Prey":
 				return ActorFactory.getPrey(
+					this.getGlobalServices(),
 					positionEntity.getProperty("position").clone(),
 					childProperties.detectionRadius,
 					childProperties.sex,
@@ -103,6 +108,7 @@ export class AnimalMatingService extends BaseService {
 
 			case "Hunter":
 				return ActorFactory.getHunter(
+					this.getGlobalServices(),
 					positionEntity.getProperty("position").clone(),
 					childProperties.detectionRadius,
 					childProperties.sex,

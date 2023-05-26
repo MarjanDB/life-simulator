@@ -1,6 +1,7 @@
 import { WorldTerrain, WorldTerrainGeneratorParams } from "./simulation/world/worldGenerator";
 import { create } from "zustand";
 import { Actor } from "./simulation/figures/actors/actor";
+import { GlobalServices } from "./simulation/figures/service/globalServices";
 
 type worldState = WorldTerrainGeneratorParams & {
 	terrain: WorldTerrain;
@@ -12,7 +13,9 @@ type worldState = WorldTerrainGeneratorParams & {
 
 type actorState = {
 	actors: Actor[];
+	globalServices: GlobalServices;
 	setActors: (actors: Actor[]) => void;
+	setGlobalServices: (GlobalServices: GlobalServices) => void;
 };
 
 type simulationState = {
@@ -70,7 +73,9 @@ export const WORLD_STATE = create<worldState>()((set) => ({
 
 export const ACTOR_STATE = create<actorState>()((set) => ({
 	actors: [],
+	globalServices: new GlobalServices(),
 	setActors: (actors) => set({ actors: actors }),
+	setGlobalServices: (globalServices) => set({ globalServices: globalServices }),
 }));
 
 export const SIMULATION_STATE = create<simulationState>()((set) => ({

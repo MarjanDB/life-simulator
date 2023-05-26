@@ -2,9 +2,9 @@ import React, { ChangeEventHandler, ReactElement, useState } from "react";
 import { Terrain } from "../simulation/world/worldGenerator";
 import { ACTOR_STATE, INITIAL_HUNTER_PROPERTIES, INITIAL_PREY_PROPERTIES, SIMULATION_STATE, WORLD_STATE } from "../state";
 import { ActorFactory } from "../simulation/figures/actors/actorFactory";
-import globalServices from "../simulation/figures/service/globalServices";
 import { StatisticsService } from "../simulation/figures/service/statisticsService";
 import { json2csv } from "json-2-csv";
+import { GlobalServices } from "../simulation/figures/service/globalServices";
 
 const FormElementForNumber: React.FC<
 	React.HTMLProps<HTMLInputElement> & {
@@ -62,8 +62,8 @@ const FormElementForString: React.FC<
 	);
 };
 
-async function exportRunStatistics() {
-	const statisticsService = globalServices.getServiceInstance("StatisticsService") as StatisticsService;
+async function exportRunStatistics(globalServices: GlobalServices) {
+	const statisticsService = globalServices.getServiceInstance(StatisticsService);
 	const statistics = statisticsService.getObservations();
 	const csv = await json2csv(statistics);
 	const blob = new Blob([csv], { type: "text/csv" });
@@ -77,6 +77,7 @@ export const FormController: React.FC = () => {
 	const initialWorldState = WORLD_STATE();
 	const initialSimulationState = SIMULATION_STATE();
 	const [terrain, setTerrain] = WORLD_STATE((v) => [v.terrain, v.setTerrain]);
+	const globalServices = ACTOR_STATE((v) => v.globalServices);
 	const setActors = ACTOR_STATE((v) => v.setActors);
 
 	const [temporaryHunterParams, setTemporaryHunterParams] = useState({
@@ -182,15 +183,19 @@ export const FormController: React.FC = () => {
 		if (!initialSimulationState.running) {
 			persistStateToGlobal();
 			if (terrain.length === 0) {
-				const generatedTerrain = Terrain.generateTerrain({
-					seed: temporaryWorldState.seed,
-					size: temporaryWorldState.size,
-					resolution: temporaryWorldState.resolution,
-				});
+				const generatedTerrain = Terrain.generateTerrain(
+					{
+						seed: temporaryWorldState.seed,
+						size: temporaryWorldState.size,
+						resolution: temporaryWorldState.resolution,
+					},
+					globalServices
+				);
 				setTerrain(generatedTerrain);
 
 				const prey = ActorFactory.generateMultiple(temporaryPreyParams.instances, () => {
 					return ActorFactory.getPrey(
+						globalServices,
 						Terrain.getRandomPosition(generatedTerrain),
 						temporaryPreyParams.detectionRadius,
 						Math.random() < 0.5 ? "FEMALE" : "MALE",
@@ -201,6 +206,7 @@ export const FormController: React.FC = () => {
 
 				const hunters = ActorFactory.generateMultiple(temporaryHunterParams.instances, () => {
 					return ActorFactory.getHunter(
+						globalServices,
 						Terrain.getRandomPosition(generatedTerrain),
 						temporaryHunterParams.detectionRadius,
 						Math.random() < 0.5 ? "FEMALE" : "MALE",
@@ -232,7 +238,7 @@ export const FormController: React.FC = () => {
 			<button className="bg-slate-100 m-2 mx-auto w-full" onClick={toggleRunning}>
 				{initialSimulationState.running ? "Stop" : "Start"}
 			</button>
-			<button className="bg-slate-100 m-2 mx-auto w-full" onClick={exportRunStatistics}>
+			<button className="bg-slate-100 m-2 mx-auto w-full" onClick={() => exportRunStatistics(globalServices)}>
 				Export Statistics
 			</button>
 		</div>

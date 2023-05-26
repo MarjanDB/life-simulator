@@ -1,5 +1,6 @@
 import { WorldTerrain } from "../../world/worldGenerator";
 import { Actor } from "../actors/actor";
+import { GlobalServices } from "../service/globalServices";
 import { BaseEntity } from "./baseEntity";
 
 export type Needs = {
@@ -30,7 +31,7 @@ export class NeedsEntity extends BaseEntity<NeedsEntityProperties> {
 		super("NeedsEntity", { needs: { hunger: 0, thirst: 0, reproduction: 0 }, needsDeltaScaling: defaultScaling });
 	}
 
-	override act(terrain: WorldTerrain, otherActors: Actor[], delta: number) {
+	override act(terrain: WorldTerrain, otherActors: Actor[], delta: number, globalServices: GlobalServices) {
 		const needs = this.getProperty("needs");
 		const scaling = this.getProperty("needsDeltaScaling");
 

@@ -1,5 +1,6 @@
 import { WorldTerrain } from "../../world/worldGenerator";
 import { Actor } from "../actors/actor";
+import { GlobalServices } from "../service/globalServices";
 import { BaseEntity } from "./baseEntity";
 
 export type AgeEntityProperties = {
@@ -12,7 +13,7 @@ export class AgeEntity extends BaseEntity<AgeEntityProperties> {
 		super("AgeEntity", { age: 0, ageOfDeath: ageOfDeath });
 	}
 
-	override act(terrain: WorldTerrain, otherActors: Actor[], delta: number): void {
+	override act(terrain: WorldTerrain, otherActors: Actor[], delta: number, globalServices: GlobalServices): void {
 		const currentAge = this.getProperty("age") + delta;
 		this.setProperty("age", currentAge);
 
