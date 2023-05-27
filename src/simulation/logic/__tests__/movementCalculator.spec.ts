@@ -2,6 +2,7 @@ import { Vector2 } from "three";
 import MovementCalculator from "../movementCalculator";
 import { Terrain } from "../../world/worldGenerator";
 import { GlobalServices } from "../../figures/service/globalServices";
+import _ from "lodash";
 
 describe("movementCalculator", () => {
 	it("doesn't move on creation", () => {
@@ -33,14 +34,34 @@ describe("movementCalculator", () => {
 		expect(movement.y).toBeGreaterThan(movement.x);
 	});
 
-	it("can calculate a border repelling force", () => {
+	it("does not change the movement of an object at rest", () => {
 		const world = Terrain.generateTerrain({ size: 3, seed: "test", resolution: 100 }, new GlobalServices());
-		const repulsion = MovementCalculator.getBorderRepulsion(world, new Vector2(1, 1));
-		expect(repulsion.x).toBeGreaterThan(1);
-		expect(repulsion.y).toBeGreaterThan(1);
+		const borders = _.flatten(world).filter((v) => v.type === "BORDER");
+		const movement = new Vector2(0, 0);
+		const position = new Vector2(1, 1);
+		const modifiedMovement = MovementCalculator.applyBarrierRepulsionMultiplier(position, movement, borders);
 
-		const repulsionInverse = MovementCalculator.getBorderRepulsion(world, new Vector2(3, 3));
-		expect(repulsionInverse.x).toBeLessThan(-1);
-		expect(repulsionInverse.y).toBeLessThan(-1);
+		expect(modifiedMovement).toEqual(movement);
+	});
+
+	it("prevents moving directly into an obstruction", () => {
+		const world = Terrain.generateTerrain({ size: 3, seed: "test", resolution: 100 }, new GlobalServices());
+		const borders = _.flatten(world).filter((v) => v.type === "BORDER");
+		const movement = new Vector2(-1, 0);
+		const position = new Vector2(0.5, 1);
+		const modifiedMovement = MovementCalculator.applyBarrierRepulsionMultiplier(position, movement, borders);
+
+		expect(modifiedMovement).not.toEqual(movement);
+		expect(modifiedMovement.x).toBeCloseTo(0);
+	});
+
+	it("it does not prevent moving away from an obstruction", () => {
+		const world = Terrain.generateTerrain({ size: 5, seed: "test", resolution: 100 }, new GlobalServices());
+		const borders = _.flatten(world).filter((v) => v.type === "BORDER");
+		const movement = new Vector2(1, 0);
+		const position = new Vector2(0.5, 3);
+		const modifiedMovement = MovementCalculator.applyBarrierRepulsionMultiplier(position, movement, borders);
+
+		expect(modifiedMovement).toEqual(movement);
 	});
 });

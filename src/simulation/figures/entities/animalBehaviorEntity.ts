@@ -18,52 +18,63 @@ import { Entity } from "../../../coreDecorators/className";
 export type AnimalSex = "MALE" | "FEMALE";
 
 export type ActorFilter = (actor: Actor) => boolean;
+export type TerrainFilter = (actor: Terrain) => boolean;
+export type BehaviorCondition = (actor: Actor) => boolean;
+
+type BehaviorState = "WANDERING" | "FLEEING" | "LOOKING_FOR_FOOD" | "LOOKING_FOR_MATE" | "LOOKING_FOR_REST" | "LOOKING_FOR_WATER" | "RESTING";
 
 export type AnimalBehaviorProperties = {
+	state: BehaviorState;
 	sex: AnimalSex;
 	foodFilter: ActorFilter;
 	kinFilter: ActorFilter;
 	hunterFilter: ActorFilter;
+	barrierFilter: TerrainFilter;
+	restFilter: TerrainFilter;
 };
 
 @Entity("AnimalBehaviorEntity")
 export class AnimalBehaviorEntity extends BaseEntity<AnimalBehaviorProperties> {
-	constructor(sex: AnimalSex, foodFilter: ActorFilter, kinFilter: ActorFilter, hunterFilter: ActorFilter) {
-		super({ sex, foodFilter, kinFilter, hunterFilter });
+	constructor(
+		sex: AnimalSex,
+		foodFilter: ActorFilter,
+		kinFilter: ActorFilter,
+		hunterFilter: ActorFilter,
+		barrierFilter: TerrainFilter = (terrain) => terrain.type === "DEEP WATER" || terrain.type === "BORDER",
+		restFilter: TerrainFilter = () => true
+	) {
+		super({ sex, foodFilter, kinFilter, hunterFilter, barrierFilter, restFilter, state: "WANDERING" });
 	}
 
 	override act(terrain: WorldTerrain, otherActors: Actor[], delta: number, globalServices: GlobalServices): void {
-		const food = otherActors.filter(this.getProperty("foodFilter"));
-		const kin = otherActors.filter(this.getProperty("kinFilter"));
-		const hunters = otherActors.filter(this.getProperty("hunterFilter"));
-
-		const positionEntity = this.getActorInstance().getEntityFromActor(PositionEntity);
-		const myPosition = positionEntity.getProperty("positionAs2D").clone();
-
 		const needsEntity = this.getActorInstance().getEntityFromActor(NeedsEntity);
 		const observerEntity = this.getActorInstance().getEntityFromActor(ObserverEntity);
 		const movementEntity = this.getActorInstance().getEntityFromActor(MovementEntity);
 		const shapeEntity = this.getActorInstance().getEntityFromActor(ShapeEntity);
 
-		const metadataEntity = this.getActorInstance().getEntityFromActor(MetadataEntity);
-		const statisticsService = globalServices.getServiceInstance(StatisticsService);
-		const animalCategory = metadataEntity.getProperty("category");
+		const food = observerEntity.getAllActorsVisibleToMe(otherActors.filter(this.getProperty("foodFilter")));
+		const kin = observerEntity.getAllActorsVisibleToMe(otherActors.filter(this.getProperty("kinFilter")));
+		const hunters = observerEntity.getAllActorsVisibleToMe(otherActors.filter(this.getProperty("hunterFilter")));
+		const flattenTerrain = _.flatten(terrain);
+		const terrainBarriers = flattenTerrain.filter(this.getProperty("barrierFilter"));
+		const terrainRestingArea = flattenTerrain.filter(this.getProperty("restFilter"));
+
+		const positionEntity = this.getActorInstance().getEntityFromActor(PositionEntity);
+		const myPosition = positionEntity.getProperty("positionAs2D").clone();
 
 		const movementCalculator = new MovementCalculator();
-		const closestDeepWater = observerEntity.getClosestActor(_.flatten(terrain).filter((v) => v.type === "DEEP WATER"));
 
 		movementCalculator.addToMovement(MovementCalculator.randomMovement(0.5));
-		movementCalculator.addToMovement(MovementCalculator.getBorderRepulsion(terrain, myPosition));
 
 		const orderedNeeds = needsEntity.getOrderedNeeds();
 		let urgentMovement: Vector2 | undefined;
 		const satisfiableNeed = orderedNeeds[0];
 		switch (satisfiableNeed) {
 			case "FOOD":
-				urgentMovement = observerEntity.getClosestActorVisibleToMe(food)?.direction;
+				urgentMovement = food[0]?.direction;
 				break;
 			case "MATE":
-				urgentMovement = this.closestMate(kin)?.direction;
+				urgentMovement = kin[0]?.direction;
 				break;
 			case "WATER":
 				urgentMovement = observerEntity.getClosestActorVisibleToMe(_.flatten(terrain).filter((v) => v.type === "WATER"))?.direction;
@@ -79,30 +90,29 @@ export class AnimalBehaviorEntity extends BaseEntity<AnimalBehaviorProperties> {
 			const final = movementCalculator.getFinalMovement();
 			const adjusted = fear.multiplyScalar(0.95).add(final.multiplyScalar(0.05));
 			movementCalculator.setToMovement(adjusted);
-			movementCalculator.addToMovement(MovementCalculator.getBorderRepulsion(terrain, myPosition));
 		}
 
-		if (closestDeepWater) {
-			movementCalculator.addToMovement(MovementCalculator.getDeepWaterRepulsion(closestDeepWater));
-		}
-
-		movementEntity.accelerateInDirection(movementCalculator.getFinalMovement());
+		const wantedMovement = movementCalculator.getFinalMovement();
+		movementEntity.accelerateInDirection(wantedMovement);
+		const nextMovement = movementEntity.getProperty("momentum");
+		const modifiedMovement = MovementCalculator.applyBarrierRepulsionMultiplier(myPosition, nextMovement, terrainBarriers);
+		movementEntity.setProperty("momentum", modifiedMovement);
 
 		const currentTerrain = Terrain.getTerrainOnPosition(myPosition.x, myPosition.y, terrain);
 
 		if (satisfiableNeed === "WATER" && currentTerrain.type === "WATER") {
-			needsEntity.satisfyNeed("WATER");
+			needsEntity.satisfyNeed("WATER", delta);
 		}
 
 		if (satisfiableNeed === "FOOD") {
-			const closestFood = observerEntity.getClosestActorVisibleToMe(food);
+			const closestFood = food[0];
 
 			const canEat =
 				closestFood &&
 				closestFood.distance < shapeEntity.getProperty("size") + closestFood.actor.getEntityFromActor(ShapeEntity).getProperty("size");
 
 			if (canEat) {
-				needsEntity.satisfyNeed("FOOD");
+				needsEntity.satisfyNeed("FOOD", delta);
 				closestFood.actor.markForDeletion("eaten");
 			}
 		}
@@ -114,17 +124,15 @@ export class AnimalBehaviorEntity extends BaseEntity<AnimalBehaviorProperties> {
 				closestMate.distance < shapeEntity.getProperty("size") + closestMate.actor.getEntityFromActor(ShapeEntity).getProperty("size");
 
 			if (canMate) {
-				needsEntity.satisfyNeed("MATE");
+				needsEntity.satisfyNeed("MATE", delta);
 				const animalMatingService = globalServices.getServiceInstance(AnimalMatingService);
 				animalMatingService.matePair(this.getActorInstance(), closestMate.actor);
 			}
 		}
 	}
 
-	protected momentumFromFearOfHunters(hunters: Actor[]) {
+	protected momentumFromFearOfHunters(closestHunters: VisibleActor[]) {
 		const observerEntity = this.getActorInstance().getEntityFromActor(ObserverEntity);
-
-		const closestHunters = observerEntity.getAllActorsVisibleToMe(hunters);
 		if (closestHunters.length === 0) return new Vector2(0, 0);
 
 		const distances = closestHunters.map((v) => v.distance);
@@ -141,10 +149,10 @@ export class AnimalBehaviorEntity extends BaseEntity<AnimalBehaviorProperties> {
 		return movementFear;
 	}
 
-	protected closestMate(otherAnimals: Actor[]): VisibleActor | null {
+	protected closestMate(otherAnimals: VisibleActor[]): VisibleActor | null {
 		const mySex = this.getProperty("sex");
 		const allOppositeSexAnimals = otherAnimals.filter((v) => {
-			const behaviorEntity = v.getEntityFromActor(AnimalBehaviorEntity);
+			const behaviorEntity = v.actor.getEntityFromActor(AnimalBehaviorEntity);
 			return behaviorEntity.getProperty("sex") === (mySex === "MALE" ? "FEMALE" : "MALE");
 		});
 
@@ -152,7 +160,7 @@ export class AnimalBehaviorEntity extends BaseEntity<AnimalBehaviorProperties> {
 
 		const myObservableRadius = this.getActorInstance().getEntityFromActor(ObserverEntity);
 
-		const matesWithDistances = myObservableRadius.getAllActorsVisibleToMe(allOppositeSexAnimals);
+		const matesWithDistances = otherAnimals;
 
 		if (matesWithDistances.length === 0) return null;
 

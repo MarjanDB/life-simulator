@@ -8,29 +8,46 @@ export type Needs = {
 	hunger: number;
 	thirst: number;
 	reproduction: number;
+	energy: number;
 };
 
 export type NeedsEntityProperties = {
 	needs: Needs;
 	needsDeltaScaling: Needs;
+	needsRegenerationScaling: Needs;
 };
 
-export type AnimalWants = "FOOD" | "WATER" | "MATE";
+export type AnimalWants = "FOOD" | "WATER" | "MATE" | "REST";
 
 const HUNGER_RATE = 0.02;
 const THIRST_RATE = 0.01;
 const REPRODUCTION_RATE = 0.008;
+const ENERGY_DEPLETION_RATE = 0.05;
+
+const ENERGY_REGENERATION_RATE = 0.025;
 
 @Entity("NeedsEntity")
 export class NeedsEntity extends BaseEntity<NeedsEntityProperties> {
-	constructor(scaling?: Partial<Needs>) {
+	constructor(needsScaling?: Partial<Needs>, needsGenerationScaling?: Partial<Needs>) {
 		const defaultScaling: Needs = {
-			hunger: scaling?.hunger ?? HUNGER_RATE,
-			thirst: scaling?.thirst ?? THIRST_RATE,
-			reproduction: scaling?.reproduction ?? REPRODUCTION_RATE,
+			hunger: needsScaling?.hunger ?? HUNGER_RATE,
+			thirst: needsScaling?.thirst ?? THIRST_RATE,
+			reproduction: needsScaling?.reproduction ?? REPRODUCTION_RATE,
+			energy: needsScaling?.energy ?? ENERGY_DEPLETION_RATE,
 		};
 
-		super({ needs: { hunger: 0, thirst: 0, reproduction: 0 }, needsDeltaScaling: defaultScaling });
+		const defaultRegenerationScaling: Needs = {
+			hunger: needsGenerationScaling?.hunger ?? 1,
+			thirst: needsGenerationScaling?.thirst ?? 1,
+			reproduction: needsGenerationScaling?.reproduction ?? 1,
+			energy: needsGenerationScaling?.energy ?? ENERGY_REGENERATION_RATE,
+		};
+
+		super({
+			needs: { hunger: 0, thirst: 0, reproduction: 0, energy: 0 },
+			needsDeltaScaling: defaultScaling,
+			needsRegenerationScaling: defaultRegenerationScaling,
+		});
 	}
 
 	override act(terrain: WorldTerrain, otherActors: Actor[], delta: number, globalServices: GlobalServices) {
@@ -61,16 +78,21 @@ export class NeedsEntity extends BaseEntity<NeedsEntityProperties> {
 						return "MATE";
 					case "thirst":
 						return "WATER";
+					case "energy":
+						return "REST";
 				}
 			});
 
 		return orderedNeeds;
 	}
 
-	satisfyNeed(need: AnimalWants) {
-		if (need === "FOOD") this.getProperty("needs").hunger = 0;
-		if (need === "WATER") this.getProperty("needs").thirst = 0;
-		if (need === "MATE") this.getProperty("needs").reproduction = 0;
+	satisfyNeed(need: AnimalWants, delta: number) {
+		const needs = this.getProperty("needs");
+
+		if (need === "FOOD") needs.hunger = Math.max(0, needs.hunger - this.getProperty("needsRegenerationScaling").hunger);
+		if (need === "WATER") needs.thirst = Math.max(0, needs.thirst - this.getProperty("needsRegenerationScaling").thirst);
+		if (need === "MATE") needs.reproduction = Math.max(0, needs.reproduction - this.getProperty("needsRegenerationScaling").reproduction);
+		if (need === "REST") needs.energy = Math.max(0, needs.energy - this.getProperty("needsRegenerationScaling").energy * delta);
 	}
 
 	shouldDie() {

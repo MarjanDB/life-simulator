@@ -5,6 +5,7 @@ import { getInstanceName, getName } from "../../../coreDecorators/className";
 
 export class Actor {
 	protected readonly entities: Map<string, BaseEntity<any>> = new Map();
+	private entityQueue: BaseEntity<any>[] = [];
 	protected shouldDelete: boolean = false;
 	protected deletionReason: string | null = null;
 
@@ -34,6 +35,11 @@ export class Actor {
 
 		entity.registerActorToEntity(this);
 		this.entities.set(entityKey, entity);
+		this.entityQueue.push(entity);
+	}
+
+	protected reorderEntityQueue() {
+		this.entityQueue.sort((a, b) => a.priority - b.priority);
 	}
 
 	public getEntityFromActor<T extends BaseEntity<any>>(entity: new (...args: any[]) => T): T {
@@ -52,7 +58,7 @@ export class Actor {
 	}
 
 	public act(terrain: WorldTerrain, otherActors: Actor[], delta: number, globalServices: GlobalServices) {
-		for (const entity of this.entities.values()) {
+		for (const entity of this.entityQueue) {
 			entity.act(terrain, otherActors, delta, globalServices);
 		}
 	}

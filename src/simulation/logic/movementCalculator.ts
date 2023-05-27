@@ -1,51 +1,81 @@
 import { Vector, Vector2 } from "three";
 import { MINIMUM_BORDER_DISTANCE, Terrain, WorldTerrain } from "../world/worldGenerator";
 import { VisibleActor } from "../figures/entities/observerEntity";
+import { Actor } from "../figures/actors/actor";
+import { PositionEntity } from "../figures/entities/positionEntity";
+import _ from "lodash";
 
 const MINIMUM_WATER_DISTANCE = 1.25;
 
 export default class MovementCalculator {
-	length: number = 0;
 	private movement: Vector2 = new Vector2(0, 0);
 	constructor() {}
 
 	public addToMovement(movement: Vector2) {
-		const length = movement.length();
 		this.movement.add(movement);
-		this.length += length;
 	}
 
 	public setToMovement(movement: Vector2) {
 		this.movement.set(movement.x, movement.y);
-		this.length = this.movement.length();
 	}
 
 	public getFinalMovement() {
-		if (this.length === 0) return this.movement.clone();
-
-		return this.movement.clone().divideScalar(this.length);
+		const normalized = this.movement.clone().normalize();
+		return normalized;
 	}
 
-	public static getBorderRepulsion(terrain: WorldTerrain, currentPossition: Vector2) {
-		const totalForce = new Vector2(0, 0);
-		const x = currentPossition.x;
-		const y = currentPossition.y;
+	public static applyBarrierRepulsionMultiplier(currentPossition: Vector2, movement: Vector2, ...barriers: Terrain[][]) {
+		const biggestPositive = new Vector2(0, 0);
+		const biggestNegative = new Vector2(0, 0);
 
-		const closestX = Math.floor(Math.round(x / terrain.length) * terrain.length);
-		const closestY = Math.floor(Math.round(y / terrain.length) * terrain.length);
+		for (const barrier of barriers) {
+			const barrierDistances = barrier.map((v) => {
+				const positionEntity = v.getEntityFromActor(PositionEntity);
+				return positionEntity.distanceToPosition(currentPossition);
+			});
 
-		const closestBorderX = new Vector2(closestX, y);
-		const closestBorderY = new Vector2(x, closestY);
+			const nearbyBarriers = barrierDistances.filter((v) => v.distance < MINIMUM_BORDER_DISTANCE);
+			if (nearbyBarriers.length === 0) continue;
 
-		const diffX = closestBorderX.sub(currentPossition).clampLength(0, MINIMUM_BORDER_DISTANCE);
-		const diffLengthX = diffX.length();
-		totalForce.add(diffX.multiplyScalar(MINIMUM_BORDER_DISTANCE - diffLengthX).multiplyScalar(-5));
+			const barrierForces = nearbyBarriers.map((v) => {
+				const dampScale = Math.min(1, (MINIMUM_BORDER_DISTANCE - v.distance + 1) / MINIMUM_BORDER_DISTANCE); // 1 at furthest, 0 at closest
+				return v.direction.multiplyScalar(dampScale);
+			});
 
-		const diffY = closestBorderY.sub(currentPossition).clampLength(0, MINIMUM_BORDER_DISTANCE);
-		const diffLengthY = diffY.length();
-		totalForce.add(diffY.multiplyScalar(MINIMUM_BORDER_DISTANCE - diffLengthY).multiplyScalar(-5));
+			const barrierX = barrierForces.map((v) => v.x);
+			const barrierY = barrierForces.map((v) => v.y);
 
-		return totalForce;
+			const biggestX = _.max(barrierX)!;
+			const biggestY = _.max(barrierY)!;
+			const smallestX = _.min(barrierX)!;
+			const smallestY = _.min(barrierY)!;
+
+			biggestPositive.x = Math.max(biggestX, biggestPositive.x);
+			biggestPositive.y = Math.max(biggestY, biggestPositive.y);
+			biggestNegative.x = Math.min(smallestX, biggestNegative.x);
+			biggestNegative.y = Math.min(smallestY, biggestNegative.y);
+		}
+
+		// now to modify the movement direction based on obstructions
+		const movementDirection = movement.clone();
+
+		if (movementDirection.x > 0) {
+			movementDirection.setX(movementDirection.x * (1 + biggestNegative.x));
+		}
+
+		if (movementDirection.y > 0) {
+			movementDirection.setY(movementDirection.y * (1 + biggestNegative.y));
+		}
+
+		if (movementDirection.x < 0) {
+			movementDirection.setX(movementDirection.x * (1 - biggestPositive.x));
+		}
+
+		if (movementDirection.y < 0) {
+			movementDirection.setY(movementDirection.y * (1 - biggestPositive.y));
+		}
+
+		return movementDirection;
 	}
 
 	public static getDeepWaterRepulsion(deepWater: VisibleActor) {

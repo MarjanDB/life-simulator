@@ -14,8 +14,8 @@ export type VisibleActor = {
 
 @Entity("ObserverEntity")
 export class ObserverEntity extends BaseEntity<ObserverEntityProperties> {
-	constructor(radius: number) {
-		super({ radius: radius });
+	constructor(radius: number, priority = 20) {
+		super({ radius: radius }, priority);
 	}
 
 	getAllActorDistances(allActors: Actor[]): VisibleActor[] {
@@ -42,7 +42,8 @@ export class ObserverEntity extends BaseEntity<ObserverEntityProperties> {
 			};
 		});
 
-		return actorInfo.sort((a, b) => a.distance - b.distance);
+		const sortedDistances = actorInfo.sort((a, b) => a.distance - b.distance);
+		return sortedDistances;
 	}
 
 	getAllActorsVisibleToMe(allActors: Actor[]): VisibleActor[] {

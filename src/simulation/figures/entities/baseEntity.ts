@@ -6,7 +6,7 @@ import { GlobalServices } from "../service/globalServices";
 export class BaseEntity<T> {
 	private actorInstance?: Actor;
 
-	constructor(protected entityProperties: T, actorInstance?: Actor) {
+	constructor(protected entityProperties: T, public readonly priority = 10, actorInstance?: Actor) {
 		if (actorInstance) {
 			this.actorInstance = actorInstance;
 			this.actorInstance.addEntityToActor(this);

@@ -1,12 +1,14 @@
-import { Vector2, Vector3 } from "three";
+import { Vector, Vector2, Vector3 } from "three";
 import { BaseEntity } from "./baseEntity";
 import { Actor } from "../actors/actor";
-import { WorldTerrain } from "../../world/worldGenerator";
+import { Terrain, TerrainType, WorldTerrain } from "../../world/worldGenerator";
 import { Entity } from "../../../coreDecorators/className";
+import { GlobalServices } from "../service/globalServices";
 
 export type PositionEntityProperties = {
 	position: Vector3;
 	positionAs2D: Vector2;
+	terrainUnderMe?: Terrain;
 };
 
 export type DirectionAndDistance = {
@@ -17,7 +19,7 @@ export type DirectionAndDistance = {
 @Entity("PositionEntity")
 export class PositionEntity extends BaseEntity<PositionEntityProperties> {
 	constructor(position: Vector3) {
-		super({ position: position, positionAs2D: new Vector2(position.x, position.y) });
+		super({ position: position, positionAs2D: new Vector2(position.x, position.y), terrainUnderMe: undefined });
 	}
 
 	updatePosition(newPosition: { x: number; y: number; z: number }) {
@@ -32,9 +34,8 @@ export class PositionEntity extends BaseEntity<PositionEntityProperties> {
 		return this.distanceToAnother(otherPosition);
 	}
 
-	distanceToAnother(other: PositionEntity): DirectionAndDistance {
-		const flattenPosition = other.getProperty("positionAs2D").clone();
-		const diff = flattenPosition.sub(this.getProperty("positionAs2D"));
+	distanceToPosition(other: Vector2): DirectionAndDistance {
+		const diff = other.clone().sub(this.getProperty("positionAs2D"));
 		const distance = diff.length();
 		const normal = diff.normalize();
 
@@ -42,5 +43,24 @@ export class PositionEntity extends BaseEntity<PositionEntityProperties> {
 			direction: normal,
 			distance: distance,
 		};
+	}
+
+	distanceToAnother(other: PositionEntity): DirectionAndDistance {
+		return this.distanceToPosition(other.getProperty("positionAs2D"));
+	}
+
+	getTerrainTypeUnderMe(): TerrainType {
+		const terrain = this.getProperty("terrainUnderMe");
+
+		if (!terrain) return "BORDER";
+
+		return terrain.type;
+	}
+
+	act(terrain: WorldTerrain, otherActors: Actor[], delta: number, globalServices: GlobalServices): void {
+		this.setProperty(
+			"terrainUnderMe",
+			Terrain.getTerrainOnPosition(this.getProperty("positionAs2D").x, this.getProperty("positionAs2D").y, terrain)
+		);
 	}
 }
