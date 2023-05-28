@@ -28,6 +28,10 @@ export class MovementEntity extends BaseEntity<MovementEntityProperties> {
 		positionEntity.updatePosition({ x: currentPosition.x, y: currentPosition.y, z: terrainPositionEntity.getProperty("position").z });
 	}
 
+	public dampMovement(toPercentage: number) {
+		this.getProperty("momentum").multiplyScalar(toPercentage);
+	}
+
 	public accelerateInDirection(direction: Vector2) {
 		const currentMomentum = this.getProperty("momentum");
 		const currentMomentumWeight = currentMomentum.length();

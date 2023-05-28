@@ -9,6 +9,7 @@ import { Actor } from "./actor";
 import { MetadataEntity } from "../entities/metadataEntity";
 import { NeedsEntity } from "../entities/needsEntity";
 import { GlobalServices } from "../service/globalServices";
+import { AnimalDesires } from "../entities/animalDesires";
 
 export class ActorFactory {
 	private static assertActorIsOfCategory(category: string): ActorFilter {
@@ -31,7 +32,14 @@ export class ActorFactory {
 		const metadataEntity = new MetadataEntity({ category: "Prey" });
 		const needsEntity = new NeedsEntity();
 
-		const animalBehaviorEntity = new AnimalBehaviorEntity(
+		/*const animalBehaviorEntity = new AnimalBehaviorEntity(
+			sex,
+			this.assertActorIsOfCategory("Food"),
+			this.assertActorIsOfCategory("Prey"),
+			this.assertActorIsOfCategory("Hunter")
+		);*/
+		const animalBehaviorEntity = new AnimalBehaviorEntity();
+		const animalDesires = new AnimalDesires(
 			sex,
 			this.assertActorIsOfCategory("Food"),
 			this.assertActorIsOfCategory("Prey"),
@@ -47,6 +55,7 @@ export class ActorFactory {
 			observerEntity,
 			movementEntity,
 			animalBehaviorEntity,
+			animalDesires,
 		]);
 	}
 
@@ -59,12 +68,14 @@ export class ActorFactory {
 		const metadataEntity = new MetadataEntity({ category: "Hunter" });
 		const needsEntity = new NeedsEntity();
 
-		const animalBehaviorEntity = new AnimalBehaviorEntity(
+		/*const animalBehaviorEntity = new AnimalBehaviorEntity(
 			sex,
 			this.assertActorIsOfCategory("Prey"),
 			this.assertActorIsOfCategory("Hunter"),
 			(v) => false
-		);
+		);*/
+		const animalBehaviorEntity = new AnimalBehaviorEntity();
+		const animalDesires = new AnimalDesires(sex, this.assertActorIsOfCategory("Prey"), this.assertActorIsOfCategory("Hunter"), () => false);
 
 		return new Actor(globalServices, [
 			positionEntity,
@@ -75,6 +86,7 @@ export class ActorFactory {
 			observerEntity,
 			movementEntity,
 			animalBehaviorEntity,
+			animalDesires,
 		]);
 	}
 

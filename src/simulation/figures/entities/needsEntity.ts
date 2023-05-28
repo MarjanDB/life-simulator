@@ -15,6 +15,7 @@ export type NeedsEntityProperties = {
 	needs: Needs;
 	needsDeltaScaling: Needs;
 	needsRegenerationScaling: Needs;
+	needsTemporaryScaling: Partial<Needs>;
 };
 
 export type AnimalWants = "FOOD" | "WATER" | "MATE" | "REST";
@@ -47,16 +48,20 @@ export class NeedsEntity extends BaseEntity<NeedsEntityProperties> {
 			needs: { hunger: 0, thirst: 0, reproduction: 0, energy: 0 },
 			needsDeltaScaling: defaultScaling,
 			needsRegenerationScaling: defaultRegenerationScaling,
+			needsTemporaryScaling: {},
 		});
 	}
 
 	override act(terrain: WorldTerrain, otherActors: Actor[], delta: number, globalServices: GlobalServices) {
 		const needs = this.getProperty("needs");
-		const scaling = this.getProperty("needsDeltaScaling");
+		const defaultScaling = this.getProperty("needsDeltaScaling");
+		const temporaryScaling = this.getProperty("needsTemporaryScaling");
+		const scaling = { ...defaultScaling, ...temporaryScaling };
 
 		needs.hunger = Math.min(1, needs.hunger + delta * scaling.hunger);
 		needs.reproduction = Math.min(1, needs.reproduction + delta * scaling.reproduction);
 		needs.thirst = Math.min(1, needs.thirst + delta * scaling.thirst);
+		needs.energy = Math.min(1, needs.energy + delta * scaling.energy);
 
 		if (this.shouldDie()) {
 			const reason = needs.hunger === 1 ? "hunger" : "thirst";
@@ -86,13 +91,36 @@ export class NeedsEntity extends BaseEntity<NeedsEntityProperties> {
 		return orderedNeeds;
 	}
 
+	getNeed(need: keyof Needs) {
+		return this.getProperty("needs")[need];
+	}
+
+	setTemporaryNeedScaling(needs: Partial<Needs>) {
+		const existing = this.getProperty("needsTemporaryScaling");
+		this.setProperty("needsTemporaryScaling", { ...existing, ...needs });
+	}
+
 	satisfyNeed(need: AnimalWants, delta: number) {
 		const needs = this.getProperty("needs");
 
-		if (need === "FOOD") needs.hunger = Math.max(0, needs.hunger - this.getProperty("needsRegenerationScaling").hunger);
-		if (need === "WATER") needs.thirst = Math.max(0, needs.thirst - this.getProperty("needsRegenerationScaling").thirst);
-		if (need === "MATE") needs.reproduction = Math.max(0, needs.reproduction - this.getProperty("needsRegenerationScaling").reproduction);
-		if (need === "REST") needs.energy = Math.max(0, needs.energy - this.getProperty("needsRegenerationScaling").energy * delta);
+		switch (need) {
+			case "FOOD":
+				needs.hunger = Math.max(0, needs.hunger - this.getProperty("needsRegenerationScaling").hunger);
+				this.setTemporaryNeedScaling({ hunger: 0 });
+				break;
+			case "MATE":
+				needs.reproduction = Math.max(0, needs.reproduction - this.getProperty("needsRegenerationScaling").reproduction);
+				this.setTemporaryNeedScaling({ reproduction: 0 });
+				break;
+			case "REST":
+				needs.energy = Math.max(0, needs.energy - this.getProperty("needsRegenerationScaling").energy * delta);
+				this.setTemporaryNeedScaling({ energy: 0 });
+				break;
+			case "WATER":
+				needs.thirst = Math.max(0, needs.thirst - this.getProperty("needsRegenerationScaling").thirst);
+				this.setTemporaryNeedScaling({ thirst: 0 });
+				break;
+		}
 	}
 
 	shouldDie() {

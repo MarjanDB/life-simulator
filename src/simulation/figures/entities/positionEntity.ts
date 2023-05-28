@@ -4,6 +4,7 @@ import { Actor } from "../actors/actor";
 import { Terrain, TerrainType, WorldTerrain } from "../../world/worldGenerator";
 import { Entity } from "../../../coreDecorators/className";
 import { GlobalServices } from "../service/globalServices";
+import { ShapeEntity } from "./shapeEntity";
 
 export type PositionEntityProperties = {
 	position: Vector3;
@@ -55,6 +56,21 @@ export class PositionEntity extends BaseEntity<PositionEntityProperties> {
 		if (!terrain) return "BORDER";
 
 		return terrain.type;
+	}
+
+	isTouching(other: PositionEntity) {
+		const myShape = this.getActorInstance().getEntityFromActor(ShapeEntity);
+		const otherShape = other.getActorInstance().getEntityFromActor(ShapeEntity);
+
+		const positionDifference = this.getProperty("positionAs2D").clone().sub(other.getProperty("positionAs2D").clone()).length();
+		const combinedShapeSize = myShape.getProperty("size") + otherShape.getProperty("size");
+
+		return positionDifference <= combinedShapeSize;
+	}
+
+	isTouchingActor(other: Actor) {
+		const otherPosition = other.getEntityFromActor(PositionEntity);
+		return this.isTouching(otherPosition);
 	}
 
 	act(terrain: WorldTerrain, otherActors: Actor[], delta: number, globalServices: GlobalServices): void {

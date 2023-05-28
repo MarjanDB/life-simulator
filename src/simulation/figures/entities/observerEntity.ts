@@ -1,3 +1,4 @@
+import { Vector2 } from "three";
 import { Entity } from "../../../coreDecorators/className";
 import { Actor } from "../actors/actor";
 import { BaseEntity } from "./baseEntity";
@@ -10,6 +11,7 @@ export type ObserverEntityProperties = {
 
 export type VisibleActor = {
 	actor: Actor;
+	position: Vector2;
 } & DirectionAndDistance;
 
 @Entity("ObserverEntity")
@@ -29,6 +31,7 @@ export class ObserverEntity extends BaseEntity<ObserverEntityProperties> {
 				shape: shape,
 				distance: myPosition.distanceToAnother(position),
 				actor: v,
+				position: position,
 			};
 		});
 
@@ -39,6 +42,7 @@ export class ObserverEntity extends BaseEntity<ObserverEntityProperties> {
 				actor: v.actor,
 				direction: direction,
 				distance: distance,
+				position: v.position.getProperty("positionAs2D").clone(),
 			};
 		});
 
@@ -69,6 +73,7 @@ export class ObserverEntity extends BaseEntity<ObserverEntityProperties> {
 				actor: v.actor,
 				direction: v.direction,
 				distance: v.distance,
+				position: v.position,
 			};
 		});
 
