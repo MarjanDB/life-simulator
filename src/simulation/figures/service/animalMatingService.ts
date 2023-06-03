@@ -15,6 +15,8 @@ import { Service } from "../../../coreDecorators/className";
 export type Pair = {
 	parent1: Actor;
 	parent2: Actor;
+	numberOfOffspring: number;
+	offspringModifierCallback: (actor: Actor) => Actor;
 };
 
 @Service("AnimalMatingService")
@@ -36,7 +38,7 @@ export class AnimalMatingService extends BaseService<{ pendingPairs: Pair[] }> {
 			const eitherExists = duplicates.get(pair.parent1) !== undefined || duplicates.get(pair.parent2) !== undefined;
 			if (eitherExists) continue;
 
-			duplicates.set(pair.parent1, pair.parent2); // was missing for test
+			duplicates.set(pair.parent1, pair.parent2);
 			pairsToMate.push(pair);
 		}
 
@@ -47,17 +49,20 @@ export class AnimalMatingService extends BaseService<{ pendingPairs: Pair[] }> {
 		const actorCreatorService = this.getGlobalServices().getServiceInstance(ActorCreatorService);
 
 		for (const pair of pairsToMate) {
-			const child = this.createChildFromParents(pair.parent1, pair.parent2);
-			actorCreatorService.addActorToScene(child);
+			const children = Array.from({ length: pair.numberOfOffspring }).map((v) => this.createChildFromParents(pair.parent1, pair.parent2));
+			const modifiedChildren = children.map((v) => pair.offspringModifierCallback(v));
+			actorCreatorService.addActorsToScene(modifiedChildren);
 		}
 
 		this.setProperty("pendingPairs", []);
 	}
 
-	matePair(parent1: Actor, parent2: Actor) {
+	matePair(parent1: Actor, parent2: Actor, numberOfOffspring: number = 1, offspringModifierCallback = (v: Actor) => v) {
 		this.getProperty("pendingPairs").push({
 			parent1,
 			parent2,
+			numberOfOffspring,
+			offspringModifierCallback,
 		});
 	}
 
@@ -115,7 +120,26 @@ export class AnimalMatingService extends BaseService<{ pendingPairs: Pair[] }> {
 					childProperties.speed,
 					childProperties.size
 				);
-				break;
+
+			case "Bird":
+				return ActorFactory.getBird(
+					this.getGlobalServices(),
+					positionEntity.getProperty("position").clone(),
+					childProperties.detectionRadius,
+					childProperties.sex,
+					childProperties.speed,
+					childProperties.size
+				);
+
+			case "Fish":
+				return ActorFactory.getFish(
+					this.getGlobalServices(),
+					positionEntity.getProperty("position").clone(),
+					childProperties.detectionRadius,
+					childProperties.sex,
+					childProperties.speed,
+					childProperties.size
+				);
 		}
 
 		throw "Unknown parent category";

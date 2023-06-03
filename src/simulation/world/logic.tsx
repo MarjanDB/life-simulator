@@ -39,13 +39,35 @@ export const Logic: React.FC = () => {
 			foodGeneratedPerInterval
 		);
 
+		intervalSpawnerService.addSpawner(
+			foodInterval,
+			() => {
+				return ActorFactory.getSurfacePlant(
+					globalServices,
+					Terrain.getRandomPosition(terrain, (t) => t.type === "GRASS")
+				);
+			},
+			foodGeneratedPerInterval
+		);
+
+		intervalSpawnerService.addSpawner(
+			foodInterval,
+			() => {
+				return ActorFactory.getWaterPlant(
+					globalServices,
+					Terrain.getRandomPosition(terrain, (t) => t.type === "DEEP WATER")
+				);
+			},
+			foodGeneratedPerInterval
+		);
+
 		globalServices.addServiceInstance(actorCreatorService);
 		globalServices.getServiceInstance(ActorCreatorService);
 
 		globalServices.addServiceInstance(animalMatingService);
 		globalServices.addServiceInstance(timeService);
 		globalServices.addServiceInstance(intervalSpawnerService);
-		globalServices.addServiceInstance(statisticsService);
+		//globalServices.addServiceInstance(statisticsService);
 	});
 
 	useFrame((state, delta) => {
@@ -53,7 +75,7 @@ export const Logic: React.FC = () => {
 		const toDeleteActors = actors.filter((v) => !isStillActiveFilter(v));
 
 		if (toDeleteActors.length !== 0) {
-			const statisticsService = globalServices.getServiceInstance(StatisticsService);
+			//const statisticsService = globalServices.getServiceInstance(StatisticsService);
 			const categoryAndReason = toDeleteActors.map((v) => {
 				const metadataEntity = v.getEntityFromActor(MetadataEntity);
 				const category = metadataEntity.getProperty("category");
@@ -66,12 +88,12 @@ export const Logic: React.FC = () => {
 			const groupedCategories = _.groupBy(categoryAndReason, (v) => v.category);
 			const groupedCategoryReasons = Object.fromEntries(Object.entries(groupedCategories).map(([k, v]) => [k, _.groupBy(v, (l) => l.reason)]));
 
-			for (const [category, reasons] of Object.entries(groupedCategoryReasons)) {
+			/*for (const [category, reasons] of Object.entries(groupedCategoryReasons)) {
 				for (const [reason, counts] of Object.entries(reasons)) {
 					const count = counts.length;
 					statisticsService.noteObservation(category as any, reason as any, count);
 				}
-			}
+			}*/
 		}
 
 		for (const actor of activeActors) {

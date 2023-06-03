@@ -23,11 +23,14 @@ export class PositionEntity extends BaseEntity<PositionEntityProperties> {
 		super({ position: position, positionAs2D: new Vector2(position.x, position.y), terrainUnderMe: undefined });
 	}
 
-	updatePosition(newPosition: { x: number; y: number; z: number }) {
-		if (Number.isNaN(newPosition.x) || Number.isNaN(newPosition.y) || Number.isNaN(newPosition.z)) throw "NaN in position";
+	updatePosition(newPosition: Partial<{ x: number; y: number; z: number }>) {
+		const originalPosition = this.getProperty("position");
+		const newX = newPosition.x ?? originalPosition.x;
+		const newY = newPosition.y ?? originalPosition.y;
+		const newZ = newPosition.z ?? originalPosition.z;
 
-		this.getProperty("position").set(newPosition.x, newPosition.y, newPosition.z);
-		this.getProperty("positionAs2D").set(newPosition.x, newPosition.y);
+		this.getProperty("position").set(newX, newY, newZ);
+		this.getProperty("positionAs2D").set(newX, newY);
 	}
 
 	distanceToActor(other: Actor) {

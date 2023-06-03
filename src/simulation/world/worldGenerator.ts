@@ -33,6 +33,10 @@ export class Terrain extends Actor {
 		return matchingTerrain;
 	}
 
+	public static getTerrainOnEntityPosition(position: { x: number; y: number }, terrain: WorldTerrain): Terrain {
+		return this.getTerrainOnPosition(position.x, position.y, terrain);
+	}
+
 	public static generateTerrain(params: WorldTerrainGeneratorParams, globalServices: GlobalServices): WorldTerrain {
 		const seed = params.seed;
 		const size = params.size + 2;
@@ -94,19 +98,22 @@ export class Terrain extends Actor {
 		return terrain;
 	}
 
-	public static getRandomPosition(terrain: WorldTerrain) {
+	public static getRandomPosition(
+		terrain: WorldTerrain,
+		validTerrains = (terrain: Terrain) => terrain.type !== "WATER" && terrain.type !== "DEEP WATER"
+	) {
 		const worldSize = terrain.length;
 		const lowerWorldLimit = MINIMUM_BORDER_DISTANCE;
 		const upperWorldLimit = worldSize - MINIMUM_BORDER_DISTANCE;
 
 		const validYPositions = terrain.filter((v, y) => y > lowerWorldLimit && y < upperWorldLimit);
 		const validPositions = validYPositions
-			.map((v) => v.filter((t, x) => x > lowerWorldLimit && x < upperWorldLimit && t.type !== "WATER" && t.type !== "DEEP WATER"))
+			.map((v) => v.filter((t, x) => x > lowerWorldLimit && x < upperWorldLimit && validTerrains(t)))
 			.filter((v) => v.length > 0);
 
 		if (validPositions.length === 0) throw `No position to generate on`;
 
-		const y = validYPositions.length * Math.random();
+		const y = validPositions.length * Math.random();
 		const x = validPositions[Math.floor(y)].length * Math.random();
 
 		const matchingTerrain = Terrain.getTerrainOnPosition(x, y, validPositions);

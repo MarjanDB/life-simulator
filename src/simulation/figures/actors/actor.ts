@@ -38,6 +38,17 @@ export class Actor {
 		this.entityQueue.push(entity);
 	}
 
+	public removeEntityFromActor<T extends BaseEntity<any>>(entity: new (...args: any[]) => T) {
+		const entityKey = getName(entity);
+		const entry = this.entities.get(entityKey);
+		if (!entry) return;
+
+		entry.unRegisterActorFromEntity();
+		this.entities.delete(entityKey);
+		this.entityQueue = Array.from(this.entities.values());
+		this.reorderEntityQueue();
+	}
+
 	protected reorderEntityQueue() {
 		this.entityQueue.sort((a, b) => a.priority - b.priority);
 	}
@@ -47,6 +58,14 @@ export class Actor {
 		const existing = this.entities.has(entityKey);
 		if (!existing) throw `Entity ${entityKey} not found on instance of actor`;
 		return this.entities.get(entityKey) as T;
+	}
+
+	public tryGetEntityFromActor<T extends BaseEntity<any>>(entity: new (...args: any[]) => T): T | null {
+		try {
+			return this.getEntityFromActor(entity);
+		} catch (ex) {
+			return null;
+		}
 	}
 
 	public getGlobalServices() {

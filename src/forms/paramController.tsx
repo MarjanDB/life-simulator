@@ -180,49 +180,69 @@ export const FormController: React.FC = () => {
 	);
 
 	const toggleRunning = () => {
-		if (!initialSimulationState.running) {
-			persistStateToGlobal();
-			if (terrain.length === 0) {
-				const generatedTerrain = Terrain.generateTerrain(
-					{
-						seed: temporaryWorldState.seed,
-						size: temporaryWorldState.size,
-						resolution: temporaryWorldState.resolution,
-					},
-					globalServices
+		if (!initialSimulationState.running && terrain.length === 0) {
+			const generatedTerrain = Terrain.generateTerrain(
+				{
+					seed: temporaryWorldState.seed,
+					size: temporaryWorldState.size,
+					resolution: temporaryWorldState.resolution,
+				},
+				globalServices
+			);
+			setTerrain(generatedTerrain);
+
+			const prey = ActorFactory.generateMultiple(temporaryPreyParams.instances, () => {
+				return ActorFactory.getPrey(
+					globalServices,
+					Terrain.getRandomPosition(generatedTerrain),
+					temporaryPreyParams.detectionRadius,
+					Math.random() < 0.5 ? "FEMALE" : "MALE",
+					temporaryPreyParams.speed,
+					temporaryPreyParams.size
 				);
-				setTerrain(generatedTerrain);
+			});
 
-				const prey = ActorFactory.generateMultiple(temporaryPreyParams.instances, () => {
-					return ActorFactory.getPrey(
-						globalServices,
-						Terrain.getRandomPosition(generatedTerrain),
-						temporaryPreyParams.detectionRadius,
-						Math.random() < 0.5 ? "FEMALE" : "MALE",
-						temporaryPreyParams.speed,
-						temporaryPreyParams.size
-					);
-				});
+			const hunters = ActorFactory.generateMultiple(temporaryHunterParams.instances, () => {
+				return ActorFactory.getHunter(
+					globalServices,
+					Terrain.getRandomPosition(generatedTerrain),
+					temporaryHunterParams.detectionRadius,
+					Math.random() < 0.5 ? "FEMALE" : "MALE",
+					temporaryHunterParams.speed,
+					temporaryHunterParams.size
+				);
+			});
 
-				const hunters = ActorFactory.generateMultiple(temporaryHunterParams.instances, () => {
-					return ActorFactory.getHunter(
-						globalServices,
-						Terrain.getRandomPosition(generatedTerrain),
-						temporaryHunterParams.detectionRadius,
-						Math.random() < 0.5 ? "FEMALE" : "MALE",
-						temporaryHunterParams.speed,
-						temporaryHunterParams.size
-					);
-				});
+			const birds = ActorFactory.generateMultiple(temporaryHunterParams.instances, () => {
+				return ActorFactory.getBird(
+					globalServices,
+					Terrain.getRandomPosition(generatedTerrain),
+					temporaryHunterParams.detectionRadius,
+					Math.random() < 0.5 ? "FEMALE" : "MALE",
+					temporaryHunterParams.speed,
+					temporaryHunterParams.size / 2
+				);
+			});
 
-				console.log("creating", prey, hunters);
+			const fish = ActorFactory.generateMultiple(temporaryPreyParams.instances, () => {
+				return ActorFactory.getFish(
+					globalServices,
+					Terrain.getRandomPosition(generatedTerrain, (t) => t.type === "DEEP WATER" || t.type === "WATER"),
+					temporaryPreyParams.detectionRadius,
+					Math.random() < 0.5 ? "FEMALE" : "MALE",
+					temporaryPreyParams.speed,
+					temporaryPreyParams.size / 2
+				);
+			});
 
-				setActors([...prey, ...hunters]);
-			}
+			console.log("creating", prey, hunters);
+
+			setActors([...prey, ...hunters, ...birds, ...fish]);
 		}
 
 		const newRunning = !initialSimulationState.running;
 		initialSimulationState.setRunning(newRunning);
+		persistStateToGlobal();
 	};
 
 	return (

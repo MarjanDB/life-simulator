@@ -3,18 +3,13 @@ import MovementCalculator from "../../logic/movementCalculator";
 import { Terrain, WorldTerrain } from "../../world/worldGenerator";
 import { Actor } from "../actors/actor";
 import { BaseEntity } from "./baseEntity";
-import { NeedsEntity } from "./needsEntity";
 import { PositionEntity } from "./positionEntity";
 import { ObserverEntity, VisibleActor } from "./observerEntity";
 import _ from "lodash";
 import { MovementEntity } from "./movementEntity";
-import { ShapeEntity } from "./shapeEntity";
-import { AnimalMatingService } from "../service/animalMatingService";
-import { StatisticsService } from "../service/statisticsService";
-import { MetadataEntity } from "./metadataEntity";
 import { GlobalServices } from "../service/globalServices";
 import { Entity } from "../../../coreDecorators/className";
-import { AnimalDesires } from "./animalDesires";
+import { AnimalDesiresEntity } from "./animalDesiresEntity";
 
 export type AnimalSex = "MALE" | "FEMALE";
 
@@ -24,17 +19,20 @@ export type BehaviorCondition = (actor: Actor) => boolean;
 
 export type AnimalBehaviorProperties = {
 	barrierFilter: TerrainFilter;
+	matable: boolean;
 };
 
 @Entity("AnimalBehaviorEntity")
 export class AnimalBehaviorEntity extends BaseEntity<AnimalBehaviorProperties> {
 	constructor(barrierFilter: TerrainFilter = (terrain) => terrain.type === "DEEP WATER" || terrain.type === "BORDER") {
-		super({ barrierFilter });
+		super({ barrierFilter, matable: true });
 	}
 
 	override act(terrain: WorldTerrain, otherActors: Actor[], delta: number, globalServices: GlobalServices): void {
-		const movementEntity = this.getActorInstance().getEntityFromActor(MovementEntity);
-		const desiresEntity = this.getActorInstance().getEntityFromActor(AnimalDesires);
+		const movementEntity = this.getActorInstance().tryGetEntityFromActor(MovementEntity);
+		if (!movementEntity) return;
+
+		const desiresEntity = this.getActorInstance().getEntityFromActor(AnimalDesiresEntity);
 		const observerEntity = this.getActorInstance().getEntityFromActor(ObserverEntity);
 
 		const flattenTerrain = _.flatten(terrain);
@@ -74,20 +72,6 @@ export class AnimalBehaviorEntity extends BaseEntity<AnimalBehaviorProperties> {
 		const nextMovement = movementEntity.getProperty("momentum");
 		const modifiedMovement = MovementCalculator.applyBarrierRepulsionMultiplier(myPosition, nextMovement, terrainBarriers);
 		movementEntity.setProperty("momentum", modifiedMovement);
-
-		/*
-		if (satisfiableNeed === "MATE") {
-			const closestMate = this.closestMate(kin);
-			const canMate =
-				closestMate &&
-				closestMate.distance < shapeEntity.getProperty("size") + closestMate.actor.getEntityFromActor(ShapeEntity).getProperty("size");
-
-			if (canMate) {
-				needsEntity.satisfyNeed("MATE", delta);
-				const animalMatingService = globalServices.getServiceInstance(AnimalMatingService);
-				animalMatingService.matePair(this.getActorInstance(), closestMate.actor);
-			}
-		}*/
 	}
 
 	protected momentumFromFearOfHunters(closestHunters: VisibleActor[]) {
@@ -106,63 +90,5 @@ export class AnimalBehaviorEntity extends BaseEntity<AnimalBehaviorProperties> {
 		movementFear.divideScalar(closestHunters.length);
 
 		return movementFear;
-	}
-
-	protected closestMate(otherAnimals: VisibleActor[]): VisibleActor | null {
-		const mySex = this.getProperty("sex");
-		const allOppositeSexAnimals = otherAnimals.filter((v) => {
-			const behaviorEntity = v.actor.getEntityFromActor(AnimalBehaviorEntity);
-			return behaviorEntity.getProperty("sex") === (mySex === "MALE" ? "FEMALE" : "MALE");
-		});
-
-		if (allOppositeSexAnimals.length === 0) return null;
-
-		const matesWithDistances = allOppositeSexAnimals;
-
-		if (matesWithDistances.length === 0) return null;
-
-		if (matesWithDistances.length === 1) return matesWithDistances[0];
-
-		const matesWithSizes = matesWithDistances.map((v) => {
-			const shapeEntity = v.actor.getEntityFromActor(ShapeEntity);
-
-			return {
-				...v,
-				size: shapeEntity.getProperty("size"),
-			};
-		});
-
-		const mateDistances = matesWithSizes.map((v) => v.distance);
-		const shortestDistance = Math.min(...mateDistances);
-		const longestDistance = Math.max(...mateDistances);
-
-		const mateSizes = matesWithSizes.map((v) => v.size);
-		const smallestMate = Math.min(...mateSizes);
-		const largestMate = Math.min(...mateSizes);
-
-		const mateScoringFunction = (mate: (typeof matesWithSizes)[0]) => {
-			const distanceOfMate = mate.distance;
-			const normalizedDistance = (distanceOfMate - shortestDistance) / (longestDistance - shortestDistance);
-
-			const sizeOfMate = mate.size;
-			const normalizedSize = (sizeOfMate - smallestMate) / (largestMate - smallestMate);
-
-			return 1 - normalizedDistance + (1 - normalizedSize);
-		};
-
-		const scoredMates = matesWithSizes.map((v) => {
-			const scored = mateScoringFunction(v);
-
-			return {
-				...v,
-				mateScore: scored,
-			};
-		});
-
-		const sortedScoredMates = scoredMates.sort((a, b) => a.mateScore - b.mateScore);
-
-		const bestMate = sortedScoredMates[0];
-
-		return bestMate;
 	}
 }

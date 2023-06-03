@@ -16,6 +16,7 @@ export type NeedsEntityProperties = {
 	needsDeltaScaling: Needs;
 	needsRegenerationScaling: Needs;
 	needsTemporaryScaling: Partial<Needs>;
+	needsOverrideScaling: Partial<Needs>;
 };
 
 export type AnimalWants = "FOOD" | "WATER" | "MATE" | "REST";
@@ -49,6 +50,7 @@ export class NeedsEntity extends BaseEntity<NeedsEntityProperties> {
 			needsDeltaScaling: defaultScaling,
 			needsRegenerationScaling: defaultRegenerationScaling,
 			needsTemporaryScaling: {},
+			needsOverrideScaling: {},
 		});
 	}
 
@@ -56,7 +58,8 @@ export class NeedsEntity extends BaseEntity<NeedsEntityProperties> {
 		const needs = this.getProperty("needs");
 		const defaultScaling = this.getProperty("needsDeltaScaling");
 		const temporaryScaling = this.getProperty("needsTemporaryScaling");
-		const scaling = { ...defaultScaling, ...temporaryScaling };
+		const needsOverrideScaling = this.getProperty("needsOverrideScaling");
+		const scaling = { ...defaultScaling, ...needsOverrideScaling, ...temporaryScaling };
 
 		needs.hunger = Math.min(1, needs.hunger + delta * scaling.hunger);
 		needs.reproduction = Math.min(1, needs.reproduction + delta * scaling.reproduction);
@@ -98,6 +101,16 @@ export class NeedsEntity extends BaseEntity<NeedsEntityProperties> {
 	setTemporaryNeedScaling(needs: Partial<Needs>) {
 		const existing = this.getProperty("needsTemporaryScaling");
 		this.setProperty("needsTemporaryScaling", { ...existing, ...needs });
+	}
+
+	setNeedScaling(needs: Partial<Needs>) {
+		const existing = this.getProperty("needsOverrideScaling");
+		this.setProperty("needsOverrideScaling", { ...existing, ...needs });
+	}
+
+	removeNeedScaling(need: keyof Needs) {
+		const existing = this.getProperty("needsOverrideScaling");
+		delete existing[need];
 	}
 
 	satisfyNeed(need: AnimalWants, delta: number) {

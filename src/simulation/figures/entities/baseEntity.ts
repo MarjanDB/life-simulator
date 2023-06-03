@@ -24,6 +24,10 @@ export class BaseEntity<T> {
 		this.actorInstance = actor;
 	}
 
+	public unRegisterActorFromEntity() {
+		this.actorInstance = undefined;
+	}
+
 	public getProperty<K extends keyof T>(property: K): T[K] {
 		return this.entityProperties[property];
 	}

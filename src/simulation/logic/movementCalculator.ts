@@ -5,7 +5,7 @@ import { Actor } from "../figures/actors/actor";
 import { PositionEntity } from "../figures/entities/positionEntity";
 import _ from "lodash";
 
-const MINIMUM_WATER_DISTANCE = 1.25;
+const MINIMUM_WATER_DISTANCE = 1;
 
 export default class MovementCalculator {
 	private movement: Vector2 = new Vector2(0, 0);
@@ -38,7 +38,7 @@ export default class MovementCalculator {
 			if (nearbyBarriers.length === 0) continue;
 
 			const barrierForces = nearbyBarriers.map((v) => {
-				const dampScale = Math.min(1, (MINIMUM_BORDER_DISTANCE - v.distance + 1) / MINIMUM_BORDER_DISTANCE); // 1 at furthest, 0 at closest
+				const dampScale = Math.min(1, (MINIMUM_BORDER_DISTANCE - v.distance + 0.5) / MINIMUM_BORDER_DISTANCE); // 1 at furthest, 0 at closest
 				return v.direction.multiplyScalar(dampScale);
 			});
 

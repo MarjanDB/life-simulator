@@ -20,12 +20,10 @@ export class MovementEntity extends BaseEntity<MovementEntityProperties> {
 	override act(terrain: WorldTerrain, otherActors: Actor[], delta: number, globalServices: GlobalServices): void {
 		const positionEntity = this.getActorInstance().getEntityFromActor(PositionEntity);
 		const currentPosition = positionEntity.getProperty("positionAs2D").clone();
-		const matchingTerrain = Terrain.getTerrainOnPosition(currentPosition.x, currentPosition.y, terrain);
-		const terrainPositionEntity = matchingTerrain.getEntityFromActor(PositionEntity);
 
 		currentPosition.add(this.getProperty("momentum").clone().multiplyScalar(delta));
 
-		positionEntity.updatePosition({ x: currentPosition.x, y: currentPosition.y, z: terrainPositionEntity.getProperty("position").z });
+		positionEntity.updatePosition({ x: currentPosition.x, y: currentPosition.y });
 	}
 
 	public dampMovement(toPercentage: number) {

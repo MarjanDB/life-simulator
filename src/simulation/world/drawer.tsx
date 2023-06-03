@@ -54,15 +54,27 @@ const ActiveScene: React.FC = () => {
 	const hunters = categorized["Hunter"] ?? [];
 	const prey = categorized["Prey"] ?? [];
 	const food = categorized["Food"] ?? [];
+	const birds = categorized["Bird"] ?? [];
+	const fish = categorized["Fish"] ?? [];
+	const surfacePlants = categorized["SurfacePlant"] ?? [];
+	const waterPlants = categorized["WaterPlant"] ?? [];
 	const renderedPrey = renderAsSpheres(prey, "mediumPurple");
 	const renderedHunters = renderAsSpheres(hunters, "red");
 	const renderedFood = renderAsSpheres(food, "lightSalmon");
+	const renderedBirds = renderAsSpheres(birds, "purple");
+	const renderedFish = renderAsSpheres(fish, "cyan");
+	const renderedSurfacePlants = renderAsSpheres(surfacePlants, "orange");
+	const renderedWaterPlants = renderAsSpheres(waterPlants, "white");
 
 	return (
 		<group name="Actors">
 			<group name="Hunters">{renderedPrey}</group>
 			<group name="Prey">{renderedHunters}</group>
 			<group name="Food">{renderedFood}</group>
+			<group name="Birds">{renderedBirds}</group>
+			<group name="Fish">{renderedFish}</group>
+			<group name="Surface Plants">{renderedSurfacePlants}</group>
+			<group name="Water Plants">{renderedWaterPlants}</group>
 		</group>
 	);
 };
